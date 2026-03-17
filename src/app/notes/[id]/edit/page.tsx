@@ -112,21 +112,32 @@ export default function EditNotePage() {
 
     setSaving(true)
     try {
-      const passwordHash: string | null | undefined = isLocked && password.trim()
-        ? await bcrypt.hash(password, 10)
-        : !isLocked ? null : undefined
+      const updatePayload: {
+        icon: string
+        title: string
+        description: string | null
+        tags: string[]
+        is_locked: boolean
+        updated_at: string
+        password_hash?: string | null
+      } = {
+        icon,
+        title: title.trim(),
+        description: description.trim() || null,
+        tags,
+        is_locked: isLocked,
+        updated_at: new Date().toISOString(),
+      }
+
+      if (isLocked && password.trim()) {
+        updatePayload.password_hash = await bcrypt.hash(password, 10)
+      } else if (!isLocked) {
+        updatePayload.password_hash = null
+      }
 
       const { error } = await supabase
         .from('notes')
-        .update({
-          icon,
-          title: title.trim(),
-          description: description.trim() || null,
-          tags,
-          is_locked: isLocked,
-          updated_at: new Date().toISOString(),
-          ...(passwordHash !== undefined ? { password_hash: passwordHash } : {}),
-        })
+        .update(updatePayload)
         .eq('id', id)
 
       if (error) throw error
