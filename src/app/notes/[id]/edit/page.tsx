@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { supabase, Note } from '@/lib/supabase'
 import EmojiPicker from '@/components/EmojiPicker'
 import TagInput from '@/components/TagInput'
 import { useToast } from '@/components/ui/Toast'
@@ -78,12 +78,13 @@ export default function EditNotePage() {
         return
       }
 
-      setIcon(data.icon || '📝')
-      setTitle(data.title || '')
-      setDescription(data.description || '')
-      setTags(data.tags || [])
-      setIsLocked(data.is_locked || false)
-      setWasLocked(data.is_locked || false)
+      const note = data as Note
+      setIcon(note.icon || '📝')
+      setTitle(note.title || '')
+      setDescription(note.description || '')
+      setTags(note.tags || [])
+      setIsLocked(note.is_locked || false)
+      setWasLocked(note.is_locked || false)
       setLoading(false)
     }
 
