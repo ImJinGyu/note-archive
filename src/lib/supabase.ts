@@ -75,7 +75,7 @@ export type Tab = {
   created_at: string
 }
 
-export type BlockType = 'text' | 'code' | 'tip' | 'steps' | 'table' | 'checklist' | 'file' | 'keyword' | 'flow' | 'featurelist' | 'keyvalue' | 'list'
+export type BlockType = 'text' | 'code' | 'tip' | 'steps' | 'table' | 'checklist' | 'file' | 'keyword' | 'flow' | 'featurelist' | 'keyvalue' | 'list' | 'credential' | 'license'
 
 export type Block = {
   id: string
@@ -127,6 +127,7 @@ export type TableContent = {
 export type ChecklistItem = {
   text: string
   checked: boolean
+  sub?: string
 }
 export type ChecklistContent = {
   items: ChecklistItem[]
@@ -186,11 +187,38 @@ export type ListStyle = 'bullet' | 'numbered' | 'arrow' | 'check'
 export type ListItem = { text: string }
 export type ListContent = { style: ListStyle; items: ListItem[] }
 
+// License block content
+export type LicenseItem = { name: string; date: string; expiry: string; issuer: string }
+export type LicenseContent = { items: LicenseItem[] }
+
+// Credential block content
+export type CredentialAccount = { username: string; password: string }
+export type CredentialItem = { label: string; url: string; accounts: CredentialAccount[]; memo: string }
+export type CredentialContent = { items: CredentialItem[] }
+
 // Document type
 export type Document = {
   id: string
   name: string
   content: string
+  created_at: string
+  updated_at: string
+}
+
+// Calendar Event types
+export type EventColor = 'sky' | 'violet' | 'emerald' | 'rose' | 'orange' | 'indigo'
+
+export type CalendarEvent = {
+  id: string
+  user_id: string | null
+  title: string
+  description: string | null
+  start_date: string   // 'YYYY-MM-DD'
+  end_date: string | null
+  start_time: string | null  // 'HH:MM'
+  end_time: string | null
+  color: EventColor
+  all_day: boolean
   created_at: string
   updated_at: string
 }

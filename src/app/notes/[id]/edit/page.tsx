@@ -7,6 +7,7 @@ import { supabase, Note } from '@/lib/supabase'
 import EmojiPicker from '@/components/EmojiPicker'
 import TagInput from '@/components/TagInput'
 import { useToast } from '@/components/ui/Toast'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import bcrypt from 'bcryptjs'
 
 const validatePassword = (pwd: string): string | null => {
@@ -56,6 +57,7 @@ export default function EditNotePage() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState<{ title?: string; password?: string }>({})
+  const [confirmSave, setConfirmSave] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -354,12 +356,12 @@ export default function EditNotePage() {
           <div className="flex items-center gap-3 pt-2">
             <Link
               href="/"
-              className="flex-1 text-center px-6 py-3 rounded-xl border border-sky-200/60 dark:border-white/20 text-sky-700 dark:text-sky-300 hover:text-sky-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10 transition-all font-medium"
+              className="flex-1 text-center px-6 py-3 rounded-xl border-2 border-sky-400 text-sky-800 bg-white/40 hover:bg-white/70 hover:border-sky-500 hover:text-sky-950 transition-all font-medium"
             >
               취소
             </Link>
             <button
-              onClick={handleSave}
+              onClick={() => { if (validate()) setConfirmSave(true) }}
               disabled={saving}
               className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50"
             >
@@ -376,6 +378,17 @@ export default function EditNotePage() {
           </div>
         </div>
       </main>
+
+      <ConfirmDialog
+        isOpen={confirmSave}
+        title="노트 수정"
+        message={`"${title}" 노트를 수정하시겠습니까?`}
+        confirmLabel="수정 완료"
+        cancelLabel="취소"
+        variant="info"
+        onConfirm={() => { setConfirmSave(false); handleSave() }}
+        onCancel={() => setConfirmSave(false)}
+      />
     </div>
   )
 }

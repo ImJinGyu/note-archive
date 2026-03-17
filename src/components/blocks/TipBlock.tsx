@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { TipContent } from '@/lib/supabase'
@@ -63,7 +63,7 @@ export default function TipBlock({ content, isEditing, onChange }: TipBlockProps
     return (
       <div className="space-y-3">
         <div>
-          <label className="text-xs text-sky-600 font-medium mb-2 block">아이콘 선택:</label>
+          <label className="text-xs text-sky-900 font-medium mb-2 block">아이콘 선택:</label>
           <div className="flex flex-wrap gap-2">
             {TIP_ICONS.map((i) => (
               <button
@@ -82,10 +82,10 @@ export default function TipBlock({ content, isEditing, onChange }: TipBlockProps
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-xs text-sky-600 font-medium">항목:</label>
+          <label className="text-xs text-sky-900 font-medium">항목:</label>
           {localItems.map((item, index) => (
             <div key={index} className="flex items-center gap-2">
-              <span className="text-sky-500 text-sm w-4 text-right flex-shrink-0">{index + 1}.</span>
+              <span className="text-sky-800 text-sm w-4 text-right flex-shrink-0">{index + 1}.</span>
               <input
                 type="text"
                 value={item}
@@ -96,7 +96,7 @@ export default function TipBlock({ content, isEditing, onChange }: TipBlockProps
               <button
                 type="button"
                 onClick={() => removeItem(index)}
-                className="text-sky-400 hover:text-red-400 transition-colors p-1 flex-shrink-0"
+                className="text-sky-700 hover:text-red-400 transition-colors p-1 flex-shrink-0"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -107,7 +107,7 @@ export default function TipBlock({ content, isEditing, onChange }: TipBlockProps
           <button
             type="button"
             onClick={addItem}
-            className="flex items-center gap-2 text-sm text-sky-500 hover:text-sky-700 transition-colors mt-1"
+            className="flex items-center gap-2 text-sm text-sky-800 hover:text-sky-700 transition-colors mt-1"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -121,7 +121,7 @@ export default function TipBlock({ content, isEditing, onChange }: TipBlockProps
 
   if (!localItems.length) {
     return (
-      <div className="text-sky-400 text-sm italic py-4 text-center">
+      <div className="text-sky-700 text-sm italic py-4 text-center">
         내용이 없습니다. 편집 모드에서 항목을 추가해주세요.
       </div>
     )

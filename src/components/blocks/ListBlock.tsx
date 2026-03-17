@@ -1,9 +1,9 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useRef } from 'react'
 
 export type ListStyle = 'bullet' | 'numbered' | 'arrow' | 'check'
-export type ListItem = { text: string }
+export type ListItem = { text: string; sub?: string }
 export type ListContent = { style: ListStyle; items: ListItem[] }
 
 interface ListBlockProps {
@@ -22,10 +22,10 @@ const STYLE_OPTIONS: { value: ListStyle; label: string; icon: string }[] = [
 const BULLET_ICONS: Record<ListStyle, (i: number) => React.ReactNode> = {
   bullet: () => <span className="w-2 h-2 rounded-full bg-sky-400 flex-shrink-0 mt-2" />,
   numbered: (i) => <span className="w-5 h-5 rounded-full bg-sky-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>,
-  arrow: () => <span className="text-sky-400 font-bold flex-shrink-0">→</span>,
+  arrow: () => <span className="text-sky-700 font-bold flex-shrink-0">→</span>,
   check: () => (
     <span className="w-4 h-4 rounded border-2 border-sky-400 flex items-center justify-center flex-shrink-0">
-      <svg className="w-2.5 h-2.5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-2.5 h-2.5 text-sky-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
       </svg>
     </span>
@@ -49,11 +49,11 @@ export default function ListBlock({ content, isEditing, onChange }: ListBlockPro
     onChange({ style: newStyle, items })
   }
 
-  const updateItem = (index: number, text: string) =>
-    update(localItems.map((item, i) => (i === index ? { text } : item)))
+  const updateItem = (index: number, field: 'text' | 'sub', value: string) =>
+    update(localItems.map((item, i) => (i === index ? { ...item, [field]: value } : item)))
 
   const addItem = (afterIndex?: number) => {
-    const newItem = { text: '' }
+    const newItem: ListItem = { text: '' }
     const newItems =
       afterIndex !== undefined
         ? [...localItems.slice(0, afterIndex + 1), newItem, ...localItems.slice(afterIndex + 1)]
@@ -91,7 +91,7 @@ export default function ListBlock({ content, isEditing, onChange }: ListBlockPro
               className={`px-3 py-1 rounded-lg text-xs font-medium transition-all border ${
                 localStyle === opt.value
                   ? 'bg-sky-500 text-white border-sky-500'
-                  : 'bg-white text-sky-600 border-sky-200 hover:border-sky-400'
+                  : 'bg-white text-sky-900 border-sky-200 hover:border-sky-400'
               }`}
             >
               {opt.icon} {opt.label}
@@ -100,35 +100,48 @@ export default function ListBlock({ content, isEditing, onChange }: ListBlockPro
         </div>
 
         {/* Items */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {localItems.map((item, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <span className="text-sky-300 text-sm w-5 text-center flex-shrink-0 select-none">
-                {localStyle === 'numbered' ? `${index + 1}.` : localStyle === 'arrow' ? '→' : localStyle === 'check' ? '✓' : '•'}
-              </span>
-              <input
-                ref={(el) => { inputRefs.current[index] = el }}
-                value={item.text}
-                onChange={(e) => updateItem(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, index)}
-                placeholder="항목 입력..."
-                className="flex-1 bg-white border border-sky-200 rounded-lg px-3 py-1.5 text-sm text-sky-900 outline-none focus:border-sky-400 transition-colors"
-              />
-              <button
-                onClick={() => removeItem(index)}
-                className="text-sky-300 hover:text-red-400 transition-colors flex-shrink-0 p-1"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+            <div key={index} className="space-y-1">
+              {/* Main item row */}
+              <div className="flex items-center gap-2">
+                <span className="text-sky-700 text-sm w-5 text-center flex-shrink-0 select-none">
+                  {localStyle === 'numbered' ? `${index + 1}.` : localStyle === 'arrow' ? '→' : localStyle === 'check' ? '✓' : '•'}
+                </span>
+                <input
+                  ref={(el) => { inputRefs.current[index] = el }}
+                  value={item.text}
+                  onChange={(e) => updateItem(index, 'text', e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
+                  placeholder="항목 입력..."
+                  className="flex-1 bg-white border border-sky-200 rounded-lg px-3 py-1.5 text-sm text-sky-900 outline-none focus:border-sky-400 transition-colors"
+                />
+                <button
+                  onClick={() => removeItem(index)}
+                  className="text-sky-700 hover:text-red-400 transition-colors flex-shrink-0 p-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {/* Sub-description row */}
+              <div className="flex items-center gap-2 pl-7">
+                <span className="text-sky-700 text-xs flex-shrink-0">└</span>
+                <input
+                  value={item.sub || ''}
+                  onChange={(e) => updateItem(index, 'sub', e.target.value)}
+                  placeholder="추가 설명..."
+                  className="flex-1 bg-white/60 border border-sky-200/70 rounded-lg px-3 py-1 text-xs text-sky-900 outline-none focus:border-sky-400 transition-colors placeholder-sky-300"
+                />
+              </div>
             </div>
           ))}
         </div>
 
         <button
           onClick={() => addItem()}
-          className="w-full py-2.5 rounded-xl border-2 border-dashed border-sky-300 text-sky-500 text-sm hover:border-sky-400 hover:text-sky-700 transition-all"
+          className="w-full py-2.5 rounded-xl border-2 border-dashed border-sky-300 text-sky-800 text-sm hover:border-sky-400 hover:text-sky-700 transition-all"
         >
           + 항목 추가
         </button>
@@ -137,7 +150,7 @@ export default function ListBlock({ content, isEditing, onChange }: ListBlockPro
   }
 
   if (!localItems.length) {
-    return <div className="text-sky-400 text-sm italic py-4 text-center">항목이 없습니다.</div>
+    return <div className="text-sky-700 text-sm italic py-4 text-center">항목이 없습니다.</div>
   }
 
   return (
@@ -145,7 +158,12 @@ export default function ListBlock({ content, isEditing, onChange }: ListBlockPro
       {localItems.map((item, index) => (
         <li key={index} className="flex items-start gap-3 text-sky-800 text-sm leading-relaxed">
           {BULLET_ICONS[localStyle](index)}
-          <span>{item.text}</span>
+          <div>
+            <span>{item.text}</span>
+            {item.sub && (
+              <p className="text-xs text-sky-800 mt-0.5 leading-relaxed">{item.sub}</p>
+            )}
+          </div>
         </li>
       ))}
     </ul>

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 
@@ -48,7 +48,7 @@ export default function KeyValueBlock({ content, isEditing, onChange }: KeyValue
               placeholder="Key"
               className="w-2/5 bg-white border border-sky-200 rounded-lg px-3 py-2 text-sm text-sky-900 font-semibold outline-none focus:border-sky-400 transition-colors"
             />
-            <span className="text-sky-300 flex-shrink-0 font-light text-lg">→</span>
+            <span className="text-sky-700 flex-shrink-0 font-light text-lg">→</span>
             <input
               value={item.value}
               onChange={(e) => updateItem(index, 'value', e.target.value)}
@@ -57,7 +57,7 @@ export default function KeyValueBlock({ content, isEditing, onChange }: KeyValue
             />
             <button
               onClick={() => removeItem(index)}
-              className="text-sky-300 hover:text-red-400 transition-colors flex-shrink-0 p-1"
+              className="text-sky-700 hover:text-red-400 transition-colors flex-shrink-0 p-1"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -67,7 +67,7 @@ export default function KeyValueBlock({ content, isEditing, onChange }: KeyValue
         ))}
         <button
           onClick={addItem}
-          className="w-full py-2.5 rounded-xl border-2 border-dashed border-sky-300 text-sky-500 text-sm hover:border-sky-400 hover:text-sky-700 transition-all"
+          className="w-full py-2.5 rounded-xl border-2 border-dashed border-sky-300 text-sky-800 text-sm hover:border-sky-400 hover:text-sky-700 transition-all"
         >
           + 항목 추가
         </button>
@@ -76,7 +76,7 @@ export default function KeyValueBlock({ content, isEditing, onChange }: KeyValue
   }
 
   if (!localItems.length) {
-    return <div className="text-sky-400 text-sm italic py-4 text-center">항목이 없습니다.</div>
+    return <div className="text-sky-700 text-sm italic py-4 text-center">항목이 없습니다.</div>
   }
 
   return (
@@ -95,7 +95,7 @@ export default function KeyValueBlock({ content, isEditing, onChange }: KeyValue
           <button
             onClick={() => copyToClipboard(item.value, index)}
             title="복사"
-            className="w-8 flex items-center justify-center bg-white/70 border-l border-sky-300/50 text-sky-300 hover:text-sky-500 hover:bg-sky-50 transition-colors flex-shrink-0"
+            className="w-8 flex items-center justify-center bg-white/70 border-l border-sky-300/50 text-sky-700 hover:text-sky-800 hover:bg-sky-50 transition-colors flex-shrink-0"
           >
             {copiedIndex === index ? (
               <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

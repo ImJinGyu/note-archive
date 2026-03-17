@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { TableContent } from '@/lib/supabase'
@@ -86,7 +86,7 @@ export default function TableBlock({ content, isEditing, onChange }: TableBlockP
                       <button
                         type="button"
                         onClick={() => removeColumn(ci)}
-                        className="px-2 py-2 text-sky-400 hover:text-red-400 transition-colors flex-shrink-0 bg-sky-100/80"
+                        className="px-2 py-2 text-sky-700 hover:text-red-400 transition-colors flex-shrink-0 bg-sky-100/80"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -100,7 +100,7 @@ export default function TableBlock({ content, isEditing, onChange }: TableBlockP
                 <button
                   type="button"
                   onClick={addColumn}
-                  className="w-full h-full flex items-center justify-center text-sky-500 hover:text-sky-700 transition-colors p-2"
+                  className="w-full h-full flex items-center justify-center text-sky-800 hover:text-sky-700 transition-colors p-2"
                   title="열 추가"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,7 +129,7 @@ export default function TableBlock({ content, isEditing, onChange }: TableBlockP
                     <button
                       type="button"
                       onClick={() => removeRow(ri)}
-                      className="w-full h-full flex items-center justify-center text-sky-400 hover:text-red-400 transition-colors p-2"
+                      className="w-full h-full flex items-center justify-center text-sky-700 hover:text-red-400 transition-colors p-2"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -144,7 +144,7 @@ export default function TableBlock({ content, isEditing, onChange }: TableBlockP
         <button
           type="button"
           onClick={addRow}
-          className="flex items-center gap-2 text-sm text-sky-500 hover:text-sky-700 transition-colors"
+          className="flex items-center gap-2 text-sm text-sky-800 hover:text-sky-700 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -157,7 +157,7 @@ export default function TableBlock({ content, isEditing, onChange }: TableBlockP
 
   if (!localColumns.length) {
     return (
-      <div className="text-sky-400 text-sm italic py-4 text-center">
+      <div className="text-sky-700 text-sm italic py-4 text-center">
         테이블이 없습니다. 편집 모드에서 구성해주세요.
       </div>
     )
@@ -180,7 +180,7 @@ export default function TableBlock({ content, isEditing, onChange }: TableBlockP
             <tr key={ri} className="hover:bg-sky-50/60 transition-colors border-b border-sky-300/50 last:border-0">
               {localColumns.map((_, ci) => (
                 <td key={ci} className="px-4 py-3 text-sky-900 text-sm">
-                  {row[ci] || <span className="text-sky-300">-</span>}
+                  {row[ci] || <span className="text-sky-700">-</span>}
                 </td>
               ))}
             </tr>

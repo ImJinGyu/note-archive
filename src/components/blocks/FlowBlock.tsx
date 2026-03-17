@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { FlowContent, FlowStep } from '@/lib/supabase'
@@ -59,9 +59,9 @@ export default function FlowBlock({ content, isEditing, onChange }: FlowBlockPro
                 value={step.subtitle}
                 onChange={(e) => updateStep(index, 'subtitle', e.target.value)}
                 placeholder="부제목"
-                className="flex-1 bg-white border border-sky-200 rounded px-2 py-1 text-sm text-sky-600 outline-none focus:border-sky-400"
+                className="flex-1 bg-white border border-sky-200 rounded px-2 py-1 text-sm text-sky-900 outline-none focus:border-sky-400"
               />
-              <label className="flex items-center gap-1.5 text-xs text-sky-600 flex-shrink-0 cursor-pointer">
+              <label className="flex items-center gap-1.5 text-xs text-sky-900 flex-shrink-0 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={step.active || false}
@@ -70,7 +70,7 @@ export default function FlowBlock({ content, isEditing, onChange }: FlowBlockPro
                 />
                 활성
               </label>
-              <button onClick={() => removeStep(index)} className="text-sky-400 hover:text-red-400 transition-colors p-1 flex-shrink-0">
+              <button onClick={() => removeStep(index)} className="text-sky-700 hover:text-red-400 transition-colors p-1 flex-shrink-0">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -80,7 +80,7 @@ export default function FlowBlock({ content, isEditing, onChange }: FlowBlockPro
         </div>
         <button
           onClick={addStep}
-          className="w-full py-2.5 rounded-xl border-2 border-dashed border-sky-300 text-sky-500 text-sm hover:border-sky-400 hover:text-sky-700 transition-all"
+          className="w-full py-2.5 rounded-xl border-2 border-dashed border-sky-300 text-sky-800 text-sm hover:border-sky-400 hover:text-sky-700 transition-all"
         >
           + 단계 추가
         </button>
@@ -89,7 +89,7 @@ export default function FlowBlock({ content, isEditing, onChange }: FlowBlockPro
   }
 
   if (!localSteps.length) {
-    return <div className="text-sky-400 text-sm italic py-4 text-center">단계가 없습니다.</div>
+    return <div className="text-sky-700 text-sm italic py-4 text-center">단계가 없습니다.</div>
   }
 
   return (
@@ -106,21 +106,21 @@ export default function FlowBlock({ content, isEditing, onChange }: FlowBlockPro
                   className={`w-9 h-9 rounded-full text-sm font-bold flex items-center justify-center shadow-sm transition-colors ${
                     step.active
                       ? 'bg-sky-500 text-white ring-2 ring-sky-300 ring-offset-1'
-                      : 'bg-sky-100 text-sky-600 border border-sky-200'
+                      : 'bg-sky-100 text-sky-900 border border-sky-200'
                   }`}
                 >
                   {index + 1}
                 </span>
                 <div className="text-center">
-                  <p className={`text-sm font-bold leading-tight ${step.active ? 'text-sky-600' : 'text-sky-950'}`}>
+                  <p className={`text-sm font-bold leading-tight ${step.active ? 'text-sky-900' : 'text-sky-950'}`}>
                     {step.title}
                   </p>
-                  <p className="text-xs text-sky-400 mt-0.5 leading-tight">{step.subtitle}</p>
+                  <p className="text-xs text-sky-700 mt-0.5 leading-tight">{step.subtitle}</p>
                 </div>
               </div>
               {index < localSteps.length - 1 && (
                 <div className="flex items-start pt-4 mx-1">
-                  <svg className="w-5 h-5 text-sky-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-sky-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>

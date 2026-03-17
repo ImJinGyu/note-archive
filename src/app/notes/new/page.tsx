@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import EmojiPicker from '@/components/EmojiPicker'
 import TagInput from '@/components/TagInput'
 import { useToast } from '@/components/ui/Toast'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import bcrypt from 'bcryptjs'
 
 const validatePassword = (pwd: string): string | null => {
@@ -54,6 +55,7 @@ export default function NewNotePage() {
   const [showPassword, setShowPassword] = useState(false)
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<{ title?: string; password?: string }>({})
+  const [confirmSave, setConfirmSave] = useState(false)
 
   const validate = (): boolean => {
     const newErrors: { title?: string; password?: string } = {}
@@ -194,7 +196,7 @@ export default function NewNotePage() {
           <div>
             <label className="block text-sm font-medium text-sky-700 mb-2">태그</label>
             <TagInput tags={tags} onChange={setTags} />
-            <p className="mt-1.5 text-xs text-sky-500">Enter 또는 쉼표(,)로 태그를 추가할 수 있습니다.</p>
+            <p className="mt-1.5 text-xs text-sky-800">Enter 또는 쉼표(,)로 태그를 추가할 수 있습니다.</p>
           </div>
 
           {/* Lock */}
@@ -217,7 +219,7 @@ export default function NewNotePage() {
                   </svg>
                   암호 설정
                 </span>
-                <p className="text-xs text-sky-600 mt-0.5">비밀번호로 노트를 보호합니다.</p>
+                <p className="text-xs text-sky-900 mt-0.5">비밀번호로 노트를 보호합니다.</p>
               </div>
             </label>
 
@@ -243,7 +245,7 @@ export default function NewNotePage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-400 hover:text-sky-900 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-700 hover:text-sky-900 transition-colors"
                   >
                     {showPassword ? (
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,12 +282,12 @@ export default function NewNotePage() {
                   <div className="flex-1">
                     <h3 className="text-sky-950 font-semibold">{title}</h3>
                     {description && (
-                      <p className="text-sky-600 text-sm mt-1">{description}</p>
+                      <p className="text-sky-900 text-sm mt-1">{description}</p>
                     )}
                     {tags.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {tags.map((tag) => (
-                          <span key={tag} className="text-xs bg-sky-500/10 text-sky-500 border border-sky-500/30 rounded-full px-2 py-0.5">
+                          <span key={tag} className="text-xs bg-sky-500/10 text-sky-800 border border-sky-500/30 rounded-full px-2 py-0.5">
                             #{tag}
                           </span>
                         ))}
@@ -293,7 +295,7 @@ export default function NewNotePage() {
                     )}
                   </div>
                   {isLocked && (
-                    <svg className="w-4 h-4 text-sky-600" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 text-sky-900" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                     </svg>
                   )}
@@ -311,7 +313,7 @@ export default function NewNotePage() {
               취소
             </Link>
             <button
-              onClick={handleSave}
+              onClick={() => { if (validate()) setConfirmSave(true) }}
               disabled={saving}
               className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50"
             >
@@ -328,6 +330,17 @@ export default function NewNotePage() {
           </div>
         </div>
       </main>
+
+      <ConfirmDialog
+        isOpen={confirmSave}
+        title="노트 저장"
+        message={`"${title}" 노트를 저장하시겠습니까?`}
+        confirmLabel="저장"
+        cancelLabel="취소"
+        variant="info"
+        onConfirm={() => { setConfirmSave(false); handleSave() }}
+        onCancel={() => setConfirmSave(false)}
+      />
     </div>
   )
 }

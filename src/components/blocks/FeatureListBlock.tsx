@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { FeatureListContent, FeatureItem } from '@/lib/supabase'
@@ -11,7 +11,7 @@ interface FeatureListBlockProps {
 }
 
 const LABEL_COLORS = [
-  'text-sky-500',
+  'text-sky-800',
   'text-violet-500',
   'text-emerald-500',
   'text-amber-500',
@@ -59,7 +59,7 @@ export default function FeatureListBlock({ content, isEditing, onChange }: Featu
                 value={item.label}
                 onChange={(e) => updateItem(index, 'label', e.target.value)}
                 placeholder="레이블 (예: 1번째)"
-                className="w-24 bg-white border border-sky-200 rounded px-2 py-1 text-xs text-sky-600 outline-none focus:border-sky-400"
+                className="w-24 bg-white border border-sky-200 rounded px-2 py-1 text-xs text-sky-900 outline-none focus:border-sky-400"
               />
               <input
                 value={item.title}
@@ -67,7 +67,7 @@ export default function FeatureListBlock({ content, isEditing, onChange }: Featu
                 placeholder="기능 제목"
                 className="flex-1 bg-white border border-sky-200 rounded px-2 py-1 text-sm text-sky-900 font-semibold outline-none focus:border-sky-400"
               />
-              <button onClick={() => removeItem(index)} className="text-sky-400 hover:text-red-400 transition-colors p-1 flex-shrink-0">
+              <button onClick={() => removeItem(index)} className="text-sky-700 hover:text-red-400 transition-colors p-1 flex-shrink-0">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -77,13 +77,13 @@ export default function FeatureListBlock({ content, isEditing, onChange }: Featu
               value={item.description}
               onChange={(e) => updateItem(index, 'description', e.target.value)}
               placeholder="기능 설명"
-              className="w-full bg-white border border-sky-200 rounded px-3 py-1.5 text-sm text-sky-600 outline-none focus:border-sky-400"
+              className="w-full bg-white border border-sky-200 rounded px-3 py-1.5 text-sm text-sky-900 outline-none focus:border-sky-400"
             />
           </div>
         ))}
         <button
           onClick={addItem}
-          className="w-full py-2.5 rounded-xl border-2 border-dashed border-sky-300 text-sky-500 text-sm hover:border-sky-400 hover:text-sky-700 transition-all"
+          className="w-full py-2.5 rounded-xl border-2 border-dashed border-sky-300 text-sky-800 text-sm hover:border-sky-400 hover:text-sky-700 transition-all"
         >
           + 항목 추가
         </button>
@@ -92,7 +92,7 @@ export default function FeatureListBlock({ content, isEditing, onChange }: Featu
   }
 
   if (!localItems.length) {
-    return <div className="text-sky-400 text-sm italic py-4 text-center">항목이 없습니다.</div>
+    return <div className="text-sky-700 text-sm italic py-4 text-center">항목이 없습니다.</div>
   }
 
   return (
@@ -109,7 +109,7 @@ export default function FeatureListBlock({ content, isEditing, onChange }: Featu
               </span>
               <span className="text-sky-950 font-bold text-base leading-tight">{item.title}</span>
             </div>
-            <p className="text-sky-500 text-sm mt-0.5">{item.description}</p>
+            <p className="text-sky-800 text-sm mt-0.5">{item.description}</p>
           </div>
         </div>
       ))}

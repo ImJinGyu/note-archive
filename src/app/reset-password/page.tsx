@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -42,7 +42,7 @@ export default function ResetPasswordPage() {
           <div className="text-center py-4">
             <div className="text-3xl mb-3">✅</div>
             <p className="text-emerald-600 font-semibold">비밀번호가 변경되었습니다.</p>
-            <p className="text-sky-500 text-sm mt-1">잠시 후 메인으로 이동합니다...</p>
+            <p className="text-sky-800 text-sm mt-1">잠시 후 메인으로 이동합니다...</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -68,7 +68,7 @@ export default function ResetPasswordPage() {
             >
               {loading ? '변경 중...' : '비밀번호 변경'}
             </button>
-            <Link href="/" className="block text-center text-sky-500 text-sm hover:text-sky-700 transition-colors">
+            <Link href="/" className="block text-center text-sky-800 text-sm hover:text-sky-700 transition-colors">
               ← 메인으로
             </Link>
           </div>

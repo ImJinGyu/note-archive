@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { StepsContent, StepItem } from '@/lib/supabase'
@@ -48,12 +48,12 @@ export default function StepsBlock({ content, isEditing, onChange }: StepsBlockP
                 <span className="w-6 h-6 rounded-full bg-sky-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
                   {index + 1}
                 </span>
-                <span className="text-xs text-sky-600 font-medium">단계 {index + 1}</span>
+                <span className="text-xs text-sky-900 font-medium">단계 {index + 1}</span>
               </span>
               <button
                 type="button"
                 onClick={() => removeStep(index)}
-                className="text-sky-400 hover:text-red-400 transition-colors p-1"
+                className="text-sky-700 hover:text-red-400 transition-colors p-1"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -76,7 +76,7 @@ export default function StepsBlock({ content, isEditing, onChange }: StepsBlockP
             />
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <label className="text-xs text-sky-600">코드 (선택사항):</label>
+                <label className="text-xs text-sky-900">코드 (선택사항):</label>
                 <select
                   value={step.language || 'bash'}
                   onChange={(e) => updateStep(index, { language: e.target.value })}
@@ -101,7 +101,7 @@ export default function StepsBlock({ content, isEditing, onChange }: StepsBlockP
         <button
           type="button"
           onClick={addStep}
-          className="flex items-center gap-2 text-sm text-sky-500 hover:text-sky-700 transition-colors"
+          className="flex items-center gap-2 text-sm text-sky-800 hover:text-sky-700 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -114,7 +114,7 @@ export default function StepsBlock({ content, isEditing, onChange }: StepsBlockP
 
   if (!localSteps.length) {
     return (
-      <div className="text-sky-400 text-sm italic py-4 text-center">
+      <div className="text-sky-700 text-sm italic py-4 text-center">
         단계가 없습니다. 편집 모드에서 추가해주세요.
       </div>
     )
@@ -137,15 +137,15 @@ export default function StepsBlock({ content, isEditing, onChange }: StepsBlockP
               <h4 className="text-sky-950 font-semibold mb-1 text-base">{step.title}</h4>
             )}
             {step.description && (
-              <p className="text-sky-600 text-sm mb-2 leading-relaxed">{step.description}</p>
+              <p className="text-sky-900 text-sm mb-2 leading-relaxed">{step.description}</p>
             )}
             {step.code && (
               <div className="rounded-lg overflow-hidden border border-sky-200">
                 <div className="flex items-center justify-between bg-sky-100/80 px-3 py-1.5 border-b border-sky-200">
-                  <span className="text-xs text-sky-600 uppercase tracking-wider">{step.language || 'bash'}</span>
+                  <span className="text-xs text-sky-900 uppercase tracking-wider">{step.language || 'bash'}</span>
                   <button
                     onClick={() => setExpandedCode(expandedCode === index ? null : index)}
-                    className="text-xs text-sky-600 hover:text-sky-800 transition-colors"
+                    className="text-xs text-sky-900 hover:text-sky-800 transition-colors"
                   >
                     {expandedCode === index ? '접기' : '펼치기'}
                   </button>

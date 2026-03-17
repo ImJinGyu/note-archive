@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -221,7 +221,7 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 title="파일 업로드"
-                className="p-1.5 rounded-lg bg-sky-100 hover:bg-sky-200 text-sky-600 transition-all"
+                className="p-1.5 rounded-lg bg-sky-100 hover:bg-sky-200 text-sky-900 transition-all"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -254,7 +254,7 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
               />
               <div className="flex gap-1 mt-1.5">
                 <button onClick={createDoc} className="flex-1 text-xs py-1 rounded bg-sky-500 text-white font-medium hover:bg-sky-400 transition-all">생성</button>
-                <button onClick={() => setIsCreating(false)} className="flex-1 text-xs py-1 rounded bg-sky-100 text-sky-600 hover:bg-sky-200 transition-all">취소</button>
+                <button onClick={() => setIsCreating(false)} className="flex-1 text-xs py-1 rounded bg-sky-100 text-sky-900 hover:bg-sky-200 transition-all">취소</button>
               </div>
             </div>
           )}
@@ -262,11 +262,11 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
           {/* Doc list */}
           <div className="flex-1 overflow-y-auto py-2">
             {loading ? (
-              <div className="px-4 py-6 text-center text-xs text-sky-400">불러오는 중...</div>
+              <div className="px-4 py-6 text-center text-xs text-sky-700">불러오는 중...</div>
             ) : docs.length === 0 ? (
               <div className="px-4 py-8 text-center">
                 <p className="text-3xl mb-2">📂</p>
-                <p className="text-xs text-sky-400">문서가 없습니다.<br />새 문서를 만들거나<br />파일을 업로드하세요.</p>
+                <p className="text-xs text-sky-700">문서가 없습니다.<br />새 문서를 만들거나<br />파일을 업로드하세요.</p>
               </div>
             ) : (
               docs.map((doc) => (
@@ -281,19 +281,19 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
                 >
                   {/* 파일명 행 */}
                   <div className="flex items-center gap-2">
-                    <svg className={`w-3.5 h-3.5 flex-shrink-0 ${selectedId === doc.id ? 'text-sky-500' : 'text-sky-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-3.5 h-3.5 flex-shrink-0 ${selectedId === doc.id ? 'text-sky-800' : 'text-sky-700'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     <span className={`text-xs font-semibold truncate flex-1 ${selectedId === doc.id ? 'text-sky-800' : 'text-sky-700'}`}>{doc.name}</span>
                     {deleteTarget === doc.id ? (
                       <div className="flex gap-0.5 flex-shrink-0">
                         <button onClick={(e) => { e.stopPropagation(); deleteDoc(doc.id) }} className="text-[10px] px-1.5 py-0.5 rounded bg-red-500 text-white font-semibold">삭제</button>
-                        <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(null) }} className="text-[10px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-600">취소</button>
+                        <button onClick={(e) => { e.stopPropagation(); setDeleteTarget(null) }} className="text-[10px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-900">취소</button>
                       </div>
                     ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeleteTarget(doc.id) }}
-                        className="opacity-0 group-hover:opacity-100 text-sky-300 hover:text-red-400 transition-all flex-shrink-0"
+                        className="opacity-0 group-hover:opacity-100 text-sky-700 hover:text-red-400 transition-all flex-shrink-0"
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -355,7 +355,7 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
                   <button
                     onClick={() => downloadDoc(selectedDoc)}
                     title="다운로드"
-                    className="p-2 rounded-lg text-sky-400 hover:text-sky-700 hover:bg-sky-100 transition-all"
+                    className="p-2 rounded-lg text-sky-700 hover:text-sky-700 hover:bg-sky-100 transition-all"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -376,7 +376,7 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
                 <>
                   <button
                     onClick={cancelEdit}
-                    className="px-3 py-1.5 rounded-lg text-sm text-sky-600 hover:bg-sky-100 transition-all"
+                    className="px-3 py-1.5 rounded-lg text-sm text-sky-900 hover:bg-sky-100 transition-all"
                   >
                     취소
                   </button>
@@ -406,7 +406,7 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
               )}
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sky-400 hover:text-sky-700 hover:bg-sky-100 transition-all text-xl leading-none"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sky-700 hover:text-sky-700 hover:bg-sky-100 transition-all text-xl leading-none"
               >
                 ×
               </button>
@@ -418,8 +418,8 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
             {!selectedDoc ? (
               <div className="flex flex-col items-center justify-center h-full py-20">
                 <div className="text-5xl mb-4">📄</div>
-                <p className="text-sky-600 font-semibold mb-1">문서를 선택하거나 만들어보세요</p>
-                <p className="text-sky-400 text-sm">좌측에서 문서를 선택하거나 .md 파일을 업로드하세요</p>
+                <p className="text-sky-900 font-semibold mb-1">문서를 선택하거나 만들어보세요</p>
+                <p className="text-sky-700 text-sm">좌측에서 문서를 선택하거나 .md 파일을 업로드하세요</p>
               </div>
             ) : isEditing ? (
               <div className="h-full p-6">
@@ -440,7 +440,7 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <div className="text-4xl mb-3">✏️</div>
-                    <p className="text-sky-500 text-sm">문서가 비어 있습니다.</p>
+                    <p className="text-sky-800 text-sm">문서가 비어 있습니다.</p>
                     <button
                       onClick={startEdit}
                       className="mt-3 px-4 py-2 rounded-lg text-sm font-medium bg-sky-100 text-sky-700 hover:bg-sky-200 transition-all"

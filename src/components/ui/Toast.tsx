@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { createContext, useContext, useState, useCallback } from 'react'
 
 type ToastType = 'success' | 'error' | 'info' | 'warning'
@@ -43,7 +43,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const iconColors = {
     success: 'bg-emerald-100 dark:bg-emerald-800 text-emerald-600 dark:text-emerald-300',
     error: 'bg-red-100 dark:bg-red-800 text-red-600 dark:text-red-300',
-    info: 'bg-sky-100 dark:bg-sky-800 text-sky-600 dark:text-sky-300',
+    info: 'bg-sky-100 dark:bg-sky-800 text-sky-900 dark:text-sky-700',
     warning: 'bg-amber-100 dark:bg-amber-800 text-amber-600 dark:text-amber-300',
   }
 

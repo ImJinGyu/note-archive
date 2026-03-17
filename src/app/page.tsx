@@ -1,6 +1,6 @@
-'use client'
+﻿'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase, Note } from '@/lib/supabase'
@@ -28,6 +28,12 @@ export default function HomePage() {
   const [showTrash, setShowTrash] = useState(false)
   const [showDocs, setShowDocs] = useState(false)
   const [showAccount, setShowAccount] = useState(false)
+
+  // Drag-and-drop order
+  const [noteOrder, setNoteOrder] = useState<string[]>([])
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dragOverId, setDragOverId] = useState<string | null>(null)
+  const dragOrderRef = useRef<string[]>([])
 
   // Auth state
   const [user, setUser] = useState<User | null>(null)
@@ -167,7 +173,71 @@ export default function HomePage() {
     setDeleteTarget(null)
   }
 
+  // localStorage에서 순서 복원
+  useEffect(() => {
+    if (!user) return
+    try {
+      const saved = localStorage.getItem(`note-archive-order-${user.id}`)
+      if (saved) {
+        const parsed = JSON.parse(saved) as string[]
+        dragOrderRef.current = parsed
+        setNoteOrder(parsed)
+      }
+    } catch {}
+  }, [user])
+
+  // notes 변경 시: 기존 순서 유지 + 새 노트는 맨 앞에 추가
+  useEffect(() => {
+    if (!user || notes.length === 0) return
+    const noteIds = notes.map(n => n.id)
+    const existing = dragOrderRef.current.filter(id => noteIds.includes(id))
+    const newOnes = noteIds.filter(id => !existing.includes(id))
+    const merged = [...newOnes, ...existing]  // 새 노트는 맨 앞
+    dragOrderRef.current = merged
+    setNoteOrder(merged)
+    localStorage.setItem(`note-archive-order-${user.id}`, JSON.stringify(merged))
+  }, [notes, user])
+
+  // 드래그 핸들러
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedId(id)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (id !== dragOverId) setDragOverId(id)
+  }
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault()
+    if (!draggedId || draggedId === targetId) { setDraggedId(null); setDragOverId(null); return }
+    const newOrder = [...dragOrderRef.current]
+    const fromIdx = newOrder.indexOf(draggedId)
+    const toIdx   = newOrder.indexOf(targetId)
+    if (fromIdx === -1 || toIdx === -1) return
+    newOrder.splice(fromIdx, 1)
+    newOrder.splice(toIdx, 0, draggedId)
+    dragOrderRef.current = newOrder
+    setNoteOrder(newOrder)
+    if (user) localStorage.setItem(`note-archive-order-${user.id}`, JSON.stringify(newOrder))
+    setDraggedId(null)
+    setDragOverId(null)
+  }
+  const handleDragEnd = () => { setDraggedId(null); setDragOverId(null) }
+
   const lockedCount = notes.filter((n) => n.is_locked).length
+
+  const orderedNotes = useMemo(() => {
+    if (!noteOrder.length) return filteredNotes
+    return [...filteredNotes].sort((a, b) => {
+      const ai = noteOrder.indexOf(a.id)
+      const bi = noteOrder.indexOf(b.id)
+      if (ai === -1 && bi === -1) return 0
+      if (ai === -1) return 1
+      if (bi === -1) return -1
+      return ai - bi
+    })
+  }, [filteredNotes, noteOrder])
 
   const isLanding = !authLoading && !user
 
@@ -250,7 +320,7 @@ export default function HomePage() {
             <button
               onClick={() => setShowAccount(true)}
               title="계정 설정"
-              className="p-2 rounded-xl bg-white/30 hover:bg-white/50 border border-white/40 text-sky-700 hover:text-sky-500 transition-all"
+              className="p-2 rounded-xl bg-white/30 hover:bg-white/50 border border-white/40 text-sky-700 hover:text-sky-800 transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -260,7 +330,7 @@ export default function HomePage() {
             <button
               onClick={() => setShowDocs(true)}
               title="문서 가이드"
-              className="p-2 rounded-xl bg-white/30 hover:bg-white/50 border border-white/40 text-sky-700 hover:text-sky-500 transition-all"
+              className="p-2 rounded-xl bg-white/30 hover:bg-white/50 border border-white/40 text-sky-700 hover:text-sky-800 transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -275,6 +345,15 @@ export default function HomePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </button>
+            <Link
+              href="/calendar"
+              title="캘린더"
+              className="p-2 rounded-xl bg-white/30 hover:bg-white/50 border border-white/40 text-sky-700 hover:text-sky-800 transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </Link>
             <span className="text-sm text-sky-800 hidden sm:inline">{user?.email}</span>
             <button
               onClick={() => supabase.auth.signOut()}
@@ -302,7 +381,7 @@ export default function HomePage() {
           {/* Hero row */}
           <div className="px-6 pt-6 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold text-sky-500 uppercase tracking-widest mb-1">My Workspace</p>
+              <p className="text-xs font-semibold text-sky-800 uppercase tracking-widest mb-1">My Workspace</p>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-sky-950 leading-tight">
                 나의 <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(90deg, #0ea5e9, #6366f1)' }}>스토리지</span>
               </h2>
@@ -310,7 +389,7 @@ export default function HomePage() {
 
             {/* Search */}
             <div className="relative flex-1 sm:max-w-xs">
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-sky-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-sky-700 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -321,7 +400,7 @@ export default function HomePage() {
                 className="w-full bg-white/70 border border-sky-300/50 rounded-xl pl-10 pr-9 py-2.5 text-sky-900 placeholder-sky-400 text-sm outline-none focus:border-sky-500 focus:bg-white/90 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)] transition-all"
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-300 hover:text-sky-600 transition-colors">
+                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-700 hover:text-sky-900 transition-colors">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -339,13 +418,13 @@ export default function HomePage() {
             <div className="flex items-center gap-5">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(14,165,233,0.12)' }}>
-                  <svg className="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-sky-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div>
                   <span className="text-xl font-bold text-sky-900 leading-none block">{notes.length}</span>
-                  <span className="text-xs text-sky-500">전체</span>
+                  <span className="text-xs text-sky-800">전체</span>
                 </div>
               </div>
               <div className="w-px h-8 bg-sky-100" />
@@ -357,7 +436,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <span className="text-xl font-bold text-sky-900 leading-none block">{lockedCount}</span>
-                  <span className="text-xs text-sky-500">잠김</span>
+                  <span className="text-xs text-sky-800">잠김</span>
                 </div>
               </div>
               <div className="w-px h-8 bg-sky-100" />
@@ -369,7 +448,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <span className="text-xl font-bold text-sky-900 leading-none block">{notes.length - lockedCount}</span>
-                  <span className="text-xs text-sky-500">공개</span>
+                  <span className="text-xs text-sky-800">공개</span>
                 </div>
               </div>
             </div>
@@ -380,20 +459,20 @@ export default function HomePage() {
                 onClick={() => setActiveTab('all')}
                 className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                   activeTab === 'all'
-                    ? 'bg-white text-sky-600 shadow-sm'
+                    ? 'bg-white text-sky-900 shadow-sm'
                     : 'text-sky-700 hover:text-sky-900'
                 }`}
               >
                 전체
                 <span className={`ml-1.5 text-xs font-medium px-1.5 py-0.5 rounded-full ${
-                  activeTab === 'all' ? 'bg-sky-100 text-sky-500' : 'text-sky-400'
+                  activeTab === 'all' ? 'bg-sky-100 text-sky-800' : 'text-sky-700'
                 }`}>{notes.length}</span>
               </button>
               <button
                 onClick={() => setActiveTab('locked')}
                 className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                   activeTab === 'locked'
-                    ? 'bg-white text-sky-600 shadow-sm'
+                    ? 'bg-white text-sky-900 shadow-sm'
                     : 'text-sky-700 hover:text-sky-900'
                 }`}
               >
@@ -402,7 +481,7 @@ export default function HomePage() {
                 </svg>
                 잠김
                 <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
-                  activeTab === 'locked' ? 'bg-sky-100 text-sky-500' : 'text-sky-400'
+                  activeTab === 'locked' ? 'bg-sky-100 text-sky-800' : 'text-sky-700'
                 }`}>{lockedCount}</span>
               </button>
             </div>
@@ -439,7 +518,7 @@ export default function HomePage() {
                 ? '잠긴 노트가 없습니다'
                 : '노트가 없습니다'}
             </h3>
-            <p className="text-sky-600 text-sm mb-6 text-center max-w-xs">
+            <p className="text-sky-900 text-sm mb-6 text-center max-w-xs">
               {searchQuery
                 ? `"${searchQuery}"에 해당하는 노트를 찾을 수 없습니다.`
                 : '새 노트를 만들어 아이디어와 지식을 기록해보세요.'}
@@ -458,14 +537,50 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredNotes.map((note) => (
-              <NoteCard
+            {orderedNotes.map((note) => (
+              <div
                 key={note.id}
-                note={note}
-                onClick={() => handleNoteClick(note)}
-                onEdit={() => router.push(`/notes/${note.id}/edit`)}
-                onDelete={() => handleDeleteRequest(note)}
-              />
+                onDragOver={(e) => handleDragOver(e, note.id)}
+                onDrop={(e) => handleDrop(e, note.id)}
+                className={`relative group transition-all duration-150 ${
+                  dragOverId === note.id && draggedId !== note.id
+                    ? 'ring-2 ring-sky-400 ring-offset-2 rounded-xl scale-[1.02]'
+                    : ''
+                }`}
+              >
+                {/* 드래그 핸들 — 호버 시 표시, 이것만 draggable */}
+                <div
+                  draggable
+                  onDragStart={(e) => {
+                    handleDragStart(e, note.id)
+                    const card = (e.currentTarget as HTMLElement).parentElement
+                    if (card) e.dataTransfer.setDragImage(card, 24, 24)
+                  }}
+                  onDragEnd={handleDragEnd}
+                  onClick={(e) => e.stopPropagation()}
+                  title="드래그하여 순서 변경"
+                  className="absolute top-2.5 left-2.5 z-20 w-6 h-6 flex items-center justify-center rounded-md cursor-grab active:cursor-grabbing transition-opacity opacity-20 group-hover:opacity-100"
+                  style={{ background: 'rgba(255,255,255,0.85)', boxShadow: '0 1px 4px rgba(0,80,160,0.15)' }}
+                >
+                  <svg className="w-3 h-3 text-sky-700" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="9"  cy="5"  r="1.5"/>
+                    <circle cx="15" cy="5"  r="1.5"/>
+                    <circle cx="9"  cy="12" r="1.5"/>
+                    <circle cx="15" cy="12" r="1.5"/>
+                    <circle cx="9"  cy="19" r="1.5"/>
+                    <circle cx="15" cy="19" r="1.5"/>
+                  </svg>
+                </div>
+
+                <div className={`transition-all duration-150 ${draggedId === note.id ? 'opacity-40 scale-95' : ''}`}>
+                  <NoteCard
+                    note={note}
+                    onClick={() => handleNoteClick(note)}
+                    onEdit={() => router.push(`/notes/${note.id}/edit`)}
+                    onDelete={() => handleDeleteRequest(note)}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         )}

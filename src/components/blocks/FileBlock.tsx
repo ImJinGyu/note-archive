@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { FileContent, FileItem } from '@/lib/supabase'
@@ -56,7 +56,7 @@ function PdfPreview({ dataUrl }: { dataUrl: string }) {
     return () => { if (blobUrl) URL.revokeObjectURL(blobUrl) }
   }, [blobUrl])
 
-  if (!blobUrl) return <div className="p-3 text-center text-sm text-sky-400 italic">PDF를 불러올 수 없습니다.</div>
+  if (!blobUrl) return <div className="p-3 text-center text-sm text-sky-700 italic">PDF를 불러올 수 없습니다.</div>
 
   return (
     <div className="p-3">
@@ -102,7 +102,7 @@ function FilePreview({ file }: { file: FileItem }) {
     )
   }
 
-  return <div className="p-3 text-center text-sm text-sky-400 italic">미리보기를 지원하지 않는 파일 형식입니다</div>
+  return <div className="p-3 text-center text-sm text-sky-700 italic">미리보기를 지원하지 않는 파일 형식입니다</div>
 }
 
 interface FileBlockProps {
@@ -170,8 +170,8 @@ export default function FileBlock({ content, isEditing, onChange }: FileBlockPro
           }`}
         >
           <div className="text-3xl mb-2">📁</div>
-          <p className="text-sky-700 text-sm">파일을 드래그하거나 <span className="text-sky-500 font-medium">클릭하여 업로드</span></p>
-          <p className="text-sky-400 text-xs mt-1">모든 파일 형식 지원</p>
+          <p className="text-sky-700 text-sm">파일을 드래그하거나 <span className="text-sky-800 font-medium">클릭하여 업로드</span></p>
+          <p className="text-sky-700 text-xs mt-1">모든 파일 형식 지원</p>
           <input ref={fileInputRef} type="file" multiple onChange={(e) => handleFiles(e.target.files)} className="hidden" />
         </div>
 
@@ -183,19 +183,19 @@ export default function FileBlock({ content, isEditing, onChange }: FileBlockPro
                   <span className="text-2xl flex-shrink-0">{getFileIcon(file.type)}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sky-900 text-sm font-medium truncate">{file.name}</p>
-                    <p className="text-sky-400 text-xs">{formatFileSize(file.size)}</p>
+                    <p className="text-sky-700 text-xs">{formatFileSize(file.size)}</p>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {canPreview(file) && (
                       <button
                         type="button"
                         onClick={() => togglePreview(index)}
-                        className="text-xs text-sky-600 hover:text-sky-800 transition-colors px-2 py-1 rounded bg-sky-100 border border-sky-200"
+                        className="text-xs text-sky-900 hover:text-sky-800 transition-colors px-2 py-1 rounded bg-sky-100 border border-sky-200"
                       >
                         {file.showPreview ? '닫기' : '미리보기'}
                       </button>
                     )}
-                    <button type="button" onClick={() => removeFile(index)} className="text-sky-400 hover:text-red-400 transition-colors p-1">
+                    <button type="button" onClick={() => removeFile(index)} className="text-sky-700 hover:text-red-400 transition-colors p-1">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
@@ -216,7 +216,7 @@ export default function FileBlock({ content, isEditing, onChange }: FileBlockPro
   }
 
   if (!localFiles.length) {
-    return <div className="text-sky-400 text-sm italic py-4 text-center">파일이 없습니다. 편집 모드에서 추가해주세요.</div>
+    return <div className="text-sky-700 text-sm italic py-4 text-center">파일이 없습니다. 편집 모드에서 추가해주세요.</div>
   }
 
   return (
@@ -227,13 +227,13 @@ export default function FileBlock({ content, isEditing, onChange }: FileBlockPro
             <span className="text-2xl flex-shrink-0">{getFileIcon(file.type)}</span>
             <div className="flex-1 min-w-0">
               <p className="text-sky-900 text-sm font-medium truncate">{file.name}</p>
-              <p className="text-sky-400 text-xs">{formatFileSize(file.size)} · {file.type || '알 수 없는 형식'}</p>
+              <p className="text-sky-700 text-xs">{formatFileSize(file.size)} · {file.type || '알 수 없는 형식'}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {canPreview(file) && (
                 <button
                   onClick={() => togglePreview(index)}
-                  className="flex items-center gap-1.5 text-xs text-sky-600 hover:text-sky-800 transition-colors px-2 py-1 rounded bg-sky-100 border border-sky-200"
+                  className="flex items-center gap-1.5 text-xs text-sky-900 hover:text-sky-800 transition-colors px-2 py-1 rounded bg-sky-100 border border-sky-200"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -244,7 +244,7 @@ export default function FileBlock({ content, isEditing, onChange }: FileBlockPro
               )}
               <button
                 onClick={() => downloadFile(file)}
-                className="flex items-center gap-1.5 text-xs text-sky-600 hover:text-sky-800 transition-colors px-2 py-1 rounded bg-sky-100 border border-sky-200"
+                className="flex items-center gap-1.5 text-xs text-sky-900 hover:text-sky-800 transition-colors px-2 py-1 rounded bg-sky-100 border border-sky-200"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, Note } from '@/lib/supabase'
@@ -103,7 +103,7 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
             </div>
             <div>
               <h2 className="text-sky-950 font-bold text-lg">휴지통</h2>
-              <p className="text-sky-500 text-xs">{trashedNotes.length}개의 삭제된 노트</p>
+              <p className="text-sky-800 text-xs">{trashedNotes.length}개의 삭제된 노트</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -117,7 +117,7 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
             )}
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-sky-400 hover:text-sky-700 hover:bg-sky-100 transition-all text-xl leading-none"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sky-700 hover:text-sky-700 hover:bg-sky-100 transition-all text-xl leading-none"
             >
               ×
             </button>
@@ -128,17 +128,17 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
         <div className="overflow-y-auto" style={{ maxHeight: 'calc(85vh - 88px)' }}>
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <svg className="w-7 h-7 animate-spin text-sky-400 mb-3" fill="none" viewBox="0 0 24 24">
+              <svg className="w-7 h-7 animate-spin text-sky-700 mb-3" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              <p className="text-sky-500 text-sm">불러오는 중...</p>
+              <p className="text-sky-800 text-sm">불러오는 중...</p>
             </div>
           ) : trashedNotes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="text-5xl mb-4">🗑️</div>
               <h3 className="text-sky-900 font-semibold mb-1">휴지통이 비어있습니다</h3>
-              <p className="text-sky-500 text-sm">삭제된 노트가 여기에 표시됩니다.</p>
+              <p className="text-sky-800 text-sm">삭제된 노트가 여기에 표시됩니다.</p>
             </div>
           ) : (
             <div className="p-4 space-y-2">
@@ -161,16 +161,16 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       {note.description && (
-                        <p className="text-sky-500 text-xs truncate max-w-[200px]">{note.description}</p>
+                        <p className="text-sky-800 text-xs truncate max-w-[200px]">{note.description}</p>
                       )}
-                      <span className="text-sky-400 text-xs flex-shrink-0">
+                      <span className="text-sky-700 text-xs flex-shrink-0">
                         {note.deleted_at ? formatDeletedDate(note.deleted_at) : ''} 삭제
                       </span>
                     </div>
                     {note.tags && note.tags.length > 0 && (
                       <div className="flex gap-1 mt-1">
                         {note.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="text-[10px] text-sky-500 bg-sky-50 border border-sky-300/50 px-1.5 py-0.5 rounded-full">#{tag}</span>
+                          <span key={tag} className="text-[10px] text-sky-800 bg-sky-50 border border-sky-300/50 px-1.5 py-0.5 rounded-full">#{tag}</span>
                         ))}
                       </div>
                     )}
@@ -179,7 +179,7 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
                     <button
                       onClick={() => handleRestore(note)}
                       disabled={processing === note.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-all disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-900 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-all disabled:opacity-50"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -217,7 +217,7 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
                 ⚠️
               </div>
               <h3 className="text-sky-950 font-bold text-lg">영구 삭제</h3>
-              <p className="text-sky-600 text-sm mt-2">
+              <p className="text-sky-900 text-sm mt-2">
                 <span className="font-semibold text-sky-900">"{permanentDeleteTarget.title}"</span> 노트를 영구 삭제하시겠습니까?<br />
                 <span className="text-red-500 font-medium">이 작업은 되돌릴 수 없습니다.</span>
               </p>

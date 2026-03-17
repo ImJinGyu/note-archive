@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { Note } from '@/lib/supabase'
 
@@ -61,7 +61,7 @@ export default function NoteCard({ note, onClick, onEdit, onDelete }: NoteCardPr
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              className="p-1.5 rounded-lg bg-sky-100 text-sky-600 hover:bg-sky-200 transition-colors"
+              className="p-1.5 rounded-lg bg-sky-100 text-sky-900 hover:bg-sky-200 transition-colors"
               title="편집"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,7 +82,7 @@ export default function NoteCard({ note, onClick, onEdit, onDelete }: NoteCardPr
       </div>
 
       {/* Title */}
-      <h3 className="text-sky-900 font-semibold text-base mb-1.5 group-hover:text-sky-600 transition-colors line-clamp-1">
+      <h3 className="text-sky-900 font-semibold text-base mb-1.5 group-hover:text-sky-900 transition-colors line-clamp-1">
         {note.title}
       </h3>
 
@@ -105,7 +105,7 @@ export default function NoteCard({ note, onClick, onEdit, onDelete }: NoteCardPr
             </span>
           ))}
           {note.tags.length > 4 && (
-            <span className="text-xs px-2 py-0.5 rounded-full border border-sky-200 text-sky-600">
+            <span className="text-xs px-2 py-0.5 rounded-full border border-sky-200 text-sky-900">
               +{note.tags.length - 4}
             </span>
           )}
@@ -114,8 +114,8 @@ export default function NoteCard({ note, onClick, onEdit, onDelete }: NoteCardPr
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-3 border-t border-sky-300/50">
-        <span className="text-xs text-sky-500">{formatDate(note.updated_at)}</span>
-        <span className="text-xs text-sky-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+        <span className="text-xs text-sky-800">{formatDate(note.updated_at)}</span>
+        <span className="text-xs text-sky-800 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
           열기
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useEffect, useRef } from 'react'
 import { signIn, signUp, supabase } from '@/lib/supabase'
 import { useToast } from '@/components/ui/Toast'
@@ -362,7 +362,7 @@ export default function AuthModal({ isOpen, initialTab = 'login', onClose, onSuc
             <button
               type="button"
               onClick={() => setShowPwd(!showPwd)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-400 hover:text-sky-700 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-700 hover:text-sky-700 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {showPwd

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { CodeContent } from '@/lib/supabase'
@@ -37,7 +37,7 @@ export default function CodeBlock({ content, isEditing, onChange }: CodeBlockPro
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <label className="text-xs text-sky-600 font-medium">언어:</label>
+          <label className="text-xs text-sky-900 font-medium">언어:</label>
           <select
             value={localLanguage}
             onChange={(e) => {
@@ -68,7 +68,7 @@ export default function CodeBlock({ content, isEditing, onChange }: CodeBlockPro
 
   if (!localCode) {
     return (
-      <div className="text-sky-400 text-sm italic py-4 text-center">
+      <div className="text-sky-700 text-sm italic py-4 text-center">
         코드가 없습니다. 편집 모드에서 작성해주세요.
       </div>
     )
@@ -77,12 +77,12 @@ export default function CodeBlock({ content, isEditing, onChange }: CodeBlockPro
   return (
     <div className="rounded-lg overflow-hidden border border-sky-200">
       <div className="flex items-center justify-between bg-sky-100/80 px-4 py-2 border-b border-sky-200">
-        <span className="text-xs text-sky-600 font-medium uppercase tracking-wider">
+        <span className="text-xs text-sky-900 font-medium uppercase tracking-wider">
           {localLanguage || 'code'}
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-xs text-sky-600 hover:text-sky-800 transition-colors"
+          className="flex items-center gap-1.5 text-xs text-sky-900 hover:text-sky-800 transition-colors"
         >
           {copied ? (
             <>

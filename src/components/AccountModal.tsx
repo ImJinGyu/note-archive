@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -255,7 +255,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
           <h2 className="text-sky-950 font-bold text-lg">계정 설정</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-sky-400 hover:text-sky-700 hover:bg-sky-100 transition-all text-xl leading-none"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-sky-700 hover:text-sky-700 hover:bg-sky-100 transition-all text-xl leading-none"
           >
             ×
           </button>
@@ -269,8 +269,8 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
               onClick={() => setTab(t.id)}
               className={`flex-1 px-3 py-3 text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
                 tab === t.id
-                  ? 'text-sky-600 border-b-2 border-sky-500 bg-sky-50/60'
-                  : 'text-sky-400 hover:text-sky-600 hover:bg-sky-50/30'
+                  ? 'text-sky-900 border-b-2 border-sky-500 bg-sky-50/60'
+                  : 'text-sky-700 hover:text-sky-900 hover:bg-sky-50/30'
               }`}
             >
               <span>{t.icon}</span>
@@ -286,14 +286,14 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
           {tab === 'account' && (
             <div className="space-y-6">
               <div>
-                <label className="text-xs font-semibold text-sky-500 uppercase tracking-wide">이메일 (아이디)</label>
+                <label className="text-xs font-semibold text-sky-800 uppercase tracking-wide">이메일 (아이디)</label>
                 <div className="mt-1.5 px-4 py-3 bg-sky-50 rounded-xl border border-sky-300/50 text-sky-900 text-sm font-medium font-mono">
                   {user.email}
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-sky-500 uppercase tracking-wide">비밀번호 변경</label>
+                <label className="text-xs font-semibold text-sky-800 uppercase tracking-wide">비밀번호 변경</label>
                 <div className="mt-2 space-y-2.5">
                   <input
                     type="password"
@@ -336,7 +336,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
                 <div className="text-center py-8">
                   <div className="text-5xl mb-4">🔐</div>
                   <h3 className="text-sky-900 font-semibold mb-2">2단계 인증이 비활성화 상태입니다</h3>
-                  <p className="text-sky-500 text-sm mb-6">
+                  <p className="text-sky-800 text-sm mb-6">
                     Google Authenticator 등 TOTP 앱으로 계정을 보호하세요.
                   </p>
                   <button
@@ -357,7 +357,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
                     <div className="flex justify-center">
                       <img src={qrCode} alt="2FA QR Code" className="w-44 h-44 rounded-xl" />
                     </div>
-                    <p className="text-xs text-sky-500 text-center mt-3">
+                    <p className="text-xs text-sky-800 text-center mt-3">
                       또는 직접 입력:{' '}
                       <code className="bg-white px-2 py-0.5 rounded border border-sky-200 font-mono text-xs select-all">
                         {secret}
@@ -378,7 +378,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
                   <div className="flex gap-2">
                     <button
                       onClick={() => { setEnrolling(false); setQrCode(''); setTotpCode('') }}
-                      className="flex-1 py-2.5 rounded-xl border border-sky-200 text-sky-600 text-sm hover:bg-sky-50 transition-all"
+                      className="flex-1 py-2.5 rounded-xl border border-sky-200 text-sky-900 text-sm hover:bg-sky-50 transition-all"
                     >
                       취소
                     </button>
@@ -421,7 +421,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
           {tab === 'ip' && (
             <div className="space-y-4">
               <div className="bg-sky-50 rounded-xl p-4 border border-sky-300/50 space-y-2.5">
-                <label className="text-xs font-semibold text-sky-500 uppercase tracking-wide">IP 차단 추가</label>
+                <label className="text-xs font-semibold text-sky-800 uppercase tracking-wide">IP 차단 추가</label>
                 <div className="flex gap-2">
                   <input
                     value={newIP}
@@ -447,7 +447,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
 
               {blockedIPs.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-sky-400 text-sm">차단된 IP가 없습니다.</p>
+                  <p className="text-sky-700 text-sm">차단된 IP가 없습니다.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -455,8 +455,8 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
                     <div key={item.id} className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-sky-300/50 shadow-sm">
                       <div>
                         <p className="text-sky-900 font-mono text-sm font-semibold">{item.ip}</p>
-                        {item.reason && <p className="text-sky-500 text-xs mt-0.5">{item.reason}</p>}
-                        <p className="text-sky-400 text-xs mt-0.5">{new Date(item.blocked_at).toLocaleString('ko-KR')}</p>
+                        {item.reason && <p className="text-sky-800 text-xs mt-0.5">{item.reason}</p>}
+                        <p className="text-sky-700 text-xs mt-0.5">{new Date(item.blocked_at).toLocaleString('ko-KR')}</p>
                       </div>
                       <button
                         onClick={() => handleUnblockIP(item.id)}
@@ -503,7 +503,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
                   <div className="flex gap-2">
                     <button
                       onClick={() => { setWithdrawConfirm(false); setWithdrawPwd('') }}
-                      className="flex-1 py-2.5 rounded-xl border border-sky-200 text-sky-600 text-sm hover:bg-sky-50 transition-all"
+                      className="flex-1 py-2.5 rounded-xl border border-sky-200 text-sky-900 text-sm hover:bg-sky-50 transition-all"
                     >
                       취소
                     </button>

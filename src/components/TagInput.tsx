@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, KeyboardEvent } from 'react'
 
@@ -45,7 +45,7 @@ export default function TagInput({ tags, onChange }: TagInputProps) {
           <button
             type="button"
             onClick={() => removeTag(i)}
-            className="ml-1 text-sky-400 hover:text-sky-600 transition-colors leading-none"
+            className="ml-1 text-sky-700 hover:text-sky-900 transition-colors leading-none"
           >
             ×
           </button>

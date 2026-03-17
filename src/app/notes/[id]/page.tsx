@@ -16,6 +16,11 @@ import FlowBlock from '@/components/blocks/FlowBlock'
 import FeatureListBlock from '@/components/blocks/FeatureListBlock'
 import KeyValueBlock from '@/components/blocks/KeyValueBlock'
 import ListBlock from '@/components/blocks/ListBlock'
+import CredentialBlock from '@/components/blocks/CredentialBlock'
+import LicenseBlock from '@/components/blocks/LicenseBlock'
+import BlockTransferModal from '@/components/BlockTransferModal'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { useToast } from '@/components/ui/Toast'
 
 const BLOCK_TYPES: { type: BlockType; label: string; icon: string; description: string }[] = [
   { type: 'text', label: '텍스트', icon: '📝', description: 'Markdown 형식 텍스트' },
@@ -30,6 +35,8 @@ const BLOCK_TYPES: { type: BlockType; label: string; icon: string; description: 
   { type: 'featurelist', label: '기능 목록', icon: '⭐', description: '아이콘 + 번호 + 제목 + 설명' },
   { type: 'keyvalue', label: 'Key-Value', icon: '🗝️', description: 'Key → Value 쌍 목록' },
   { type: 'list', label: '리스트', icon: '📋', description: '점/번호/화살표/체크 스타일 목록' },
+  { type: 'credential', label: '계정정보', icon: '🔐', description: 'URL / ID / PW 저장 + 복사' },
+  { type: 'license', label: '자격/면허', icon: '🪪', description: '자격증 및 면허 정보 관리' },
 ]
 
 const BLOCK_TYPES_PER_PAGE = 7
@@ -47,6 +54,8 @@ const BLOCK_PREVIEW_SAMPLES: Record<BlockType, Record<string, unknown>> = {
   featurelist: { items: [{ icon: '⚡', label: '1번째', title: '빠른 처리', description: '실시간 데이터 처리 지원' }, { icon: '🔒', label: '2번째', title: '보안 강화', description: '암호화 및 인증 시스템' }, { icon: '🔄', label: '3번째', title: '자동 동기화', description: '변경 사항 자동 반영' }] },
   keyvalue: { items: [{ key: 'URL', value: 'https://tejhpzltljxwvtlmrsxi.supabase.co' }, { key: 'Framework', value: 'Next.js 14 App Router' }, { key: 'Database', value: 'Supabase (PostgreSQL)' }, { key: 'Styling', value: 'Tailwind CSS' }] },
   list: { style: 'bullet', items: [{ text: '첫 번째 항목' }, { text: '두 번째 항목' }, { text: '세 번째 항목' }] },
+  credential: { items: [{ label: 'Google', url: 'https://google.com', accounts: [{ username: 'user@gmail.com', password: 'password123!' }, { username: 'work@gmail.com', password: 'workpass456!' }], memo: '구글 계정' }] },
+  license: { items: [{ name: '정보처리기사', date: '2022-11', expiry: '영구', issuer: '한국산업인력공단' }, { name: '운전면허 1종 보통', date: '2019-03', expiry: '영구', issuer: '경찰청' }] },
 }
 
 const DEFAULT_CONTENT: Record<BlockType, Record<string, unknown>> = {
@@ -62,12 +71,15 @@ const DEFAULT_CONTENT: Record<BlockType, Record<string, unknown>> = {
   featurelist: { items: [{ icon: '⭐', label: '1번째', title: '기능 제목', description: '기능에 대한 설명' }] },
   keyvalue: { items: [{ key: 'Key', value: 'Value' }] },
   list: { style: 'bullet', items: [{ text: '' }] },
+  credential: { items: [{ label: '', url: '', accounts: [{ username: '', password: '' }], memo: '' }] },
+  license: { items: [{ name: '', date: '', expiry: '', issuer: '' }] },
 }
 
 export default function NoteDetailPage() {
   const params = useParams()
   const router = useRouter()
   const noteId = params.id as string
+  const { showToast } = useToast()
 
   const [note, setNote] = useState<Note | null>(null)
   const [tabs, setTabs] = useState<Tab[]>([])
@@ -82,11 +94,23 @@ export default function NoteDetailPage() {
   const [editingTabId, setEditingTabId] = useState<string | null>(null)
   const [tabNameInput, setTabNameInput] = useState('')
   const tabInputRef = useRef<HTMLInputElement>(null)
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [confirmComplete, setConfirmComplete] = useState(false)
+  const [confirmDeleteBlock, setConfirmDeleteBlock] = useState<string | null>(null)
+  const [transferBlock, setTransferBlock] = useState<Block | null>(null)
 
   const pendingChanges = useRef<Record<string, Record<string, unknown>>>({})
   const pendingTitles = useRef<Record<string, string>>({})
+
+  // 책 형식 페이지 모드 (탭별)
+  const [tabPageMode, setTabPageMode] = useState<Record<string, boolean>>({})
+  const [tabCurrentPage, setTabCurrentPage] = useState<Record<string, number>>({})
+  const [tabAnimDir, setTabAnimDir] = useState<Record<string, 'next' | 'prev'>>({})
+  const [animKey, setAnimKey] = useState(0)
+  const [availableH, setAvailableH] = useState(600)
+  const [innerH, setInnerH] = useState(0)
+  const innerBlockRef = useRef<HTMLDivElement>(null)
+  const blocksAreaRef = useRef<HTMLDivElement>(null)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -136,6 +160,56 @@ export default function NoteDetailPage() {
       tabInputRef.current.select()
     }
   }, [editingTabId])
+
+  // 페이지 모드 localStorage 복원
+  useEffect(() => {
+    if (!noteId) return
+    try {
+      const saved = localStorage.getItem(`note-page-mode-${noteId}`)
+      if (saved) setTabPageMode(JSON.parse(saved))
+    } catch {}
+  }, [noteId])
+
+  // 사용 가능한 높이 측정
+  useEffect(() => {
+    const measure = () => {
+      const raf = requestAnimationFrame(() => {
+        if (blocksAreaRef.current) {
+          const top = blocksAreaRef.current.getBoundingClientRect().top
+          setAvailableH(Math.max(window.innerHeight - top - 120, 360))
+        }
+      })
+      return raf
+    }
+    const raf = measure()
+    window.addEventListener('resize', measure)
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', measure) }
+  }, [loading])
+
+  // 내부 콘텐츠 높이 측정 (ResizeObserver) — loading 포함으로 블록 로드 후 재측정
+  useEffect(() => {
+    const attach = () => {
+      const el = innerBlockRef.current
+      if (!el) return null
+      const obs = new ResizeObserver(() => setInnerH(el.scrollHeight))
+      obs.observe(el)
+      requestAnimationFrame(() => {
+        if (innerBlockRef.current) setInnerH(innerBlockRef.current.scrollHeight)
+      })
+      return obs
+    }
+    const obs = attach()
+    return () => obs?.disconnect()
+  }, [activeTabId, tabPageMode, animKey, loading])
+
+  const togglePageMode = (tabId: string) => {
+    setTabPageMode(prev => {
+      const next = { ...prev, [tabId]: !prev[tabId] }
+      try { localStorage.setItem(`note-page-mode-${noteId}`, JSON.stringify(next)) } catch {}
+      return next
+    })
+    setTabCurrentPage(prev => ({ ...prev, [tabId]: 0 }))
+  }
 
   const activeTabBlocks = blocks
     .filter((b) => b.tab_id === activeTabId)
@@ -194,7 +268,9 @@ export default function NoteDetailPage() {
       .select()
       .single()
 
-    if (!error && data) {
+    if (error) {
+      showToast(`블록 생성 실패: ${error.message}`, 'error')
+    } else if (data) {
       setBlocks([...blocks, data])
       setEditingBlocks({ ...editingBlocks, [data.id]: true })
     }
@@ -202,6 +278,12 @@ export default function NoteDetailPage() {
 
   const updateBlockContent = (blockId: string, content: Record<string, unknown>) => {
     pendingChanges.current[blockId] = content
+  }
+
+  // 뷰 모드에서 즉시 DB 저장 (체크리스트 체크 상태 등)
+  const saveBlockNow = async (blockId: string, content: Record<string, unknown>) => {
+    await supabase.from('blocks').update({ content, updated_at: new Date().toISOString() }).eq('id', blockId)
+    setBlocks(prev => prev.map(b => b.id === blockId ? { ...b, content } : b))
   }
 
   const updateBlockTitle = (blockId: string, title: string) => {
@@ -229,10 +311,26 @@ export default function NoteDetailPage() {
       ...updatedBlocks.filter((b) => b.tab_id !== activeTabId),
       ...reordered,
     ])
-    setDeleteConfirm(null)
     // Clean up any pending changes for this block
     delete pendingChanges.current[blockId]
     delete pendingTitles.current[blockId]
+  }
+
+  const copyBlock = async (block: Block) => {
+    const newOrder = activeTabBlocks.length
+    const { data, error } = await supabase
+      .from('blocks')
+      .insert({
+        tab_id: block.tab_id,
+        type: block.type,
+        title: block.title ? `${block.title} (복사)` : null,
+        show_title: block.show_title,
+        content: block.content,
+        order_index: newOrder,
+      })
+      .select()
+      .single()
+    if (!error && data) setBlocks([...blocks, data])
   }
 
   const moveBlock = async (blockId: string, direction: 'up' | 'down') => {
@@ -296,17 +394,15 @@ export default function NoteDetailPage() {
   const blockTypeInfo = (type: BlockType) => BLOCK_TYPES.find((bt) => bt.type === type)
 
   const renderViewBlock = (block: Block) => {
+    const info = blockTypeInfo(block.type)
+    const headerLabel = (block.show_title && block.title) ? block.title : (info?.label ?? block.type)
     return (
       <div key={block.id} className="glass-card rounded-xl overflow-hidden shadow-sm">
-        {block.show_title && block.title && block.type !== 'keyvalue' && (
-          <div className="px-5 pt-4 pb-1">
-            <h3 className="text-sky-950 font-semibold text-base flex items-center gap-2">
-              <span className="text-base">{blockTypeInfo(block.type)?.icon}</span>
-              {block.title}
-            </h3>
-            <div className="mt-2 h-px bg-sky-300/60" />
-          </div>
-        )}
+        {/* 항상 표시되는 헤더 */}
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-sky-300/70 bg-sky-100/60">
+          <span className="text-base">{info?.icon}</span>
+          <span className="text-sm font-semibold text-sky-800">{headerLabel}</span>
+        </div>
         <div className="p-5">
           {block.type === 'text' && (
             <TextBlock
@@ -347,7 +443,7 @@ export default function NoteDetailPage() {
             <ChecklistBlock
               content={block.content as Parameters<typeof ChecklistBlock>[0]['content']}
               isEditing={false}
-              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+              onChange={(c) => saveBlockNow(block.id, c as Record<string, unknown>)}
             />
           )}
           {block.type === 'file' && (
@@ -388,6 +484,20 @@ export default function NoteDetailPage() {
           {block.type === 'list' && (
             <ListBlock
               content={block.content as Parameters<typeof ListBlock>[0]['content']}
+              isEditing={false}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'credential' && (
+            <CredentialBlock
+              content={block.content as Parameters<typeof CredentialBlock>[0]['content']}
+              isEditing={false}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'license' && (
+            <LicenseBlock
+              content={block.content as Parameters<typeof LicenseBlock>[0]['content']}
               isEditing={false}
               onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
             />
@@ -453,6 +563,28 @@ export default function NoteDetailPage() {
               )}
             </button>
 
+            {/* Copy */}
+            <button
+              onClick={() => copyBlock(block)}
+              title="블록 복사 (현재 탭)"
+              className="p-1.5 rounded-lg text-sky-400 hover:text-sky-700 hover:bg-sky-100 transition-all"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
+
+            {/* Transfer to other note */}
+            <button
+              onClick={() => setTransferBlock(block)}
+              title="다른 노트로 복사/이동"
+              className="p-1.5 rounded-lg text-sky-400 hover:text-sky-700 hover:bg-sky-100 transition-all"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+            </button>
+
             {/* Move up */}
             <button
               onClick={() => moveBlock(block.id, 'up')}
@@ -478,32 +610,15 @@ export default function NoteDetailPage() {
             </button>
 
             {/* Delete */}
-            {deleteConfirm === block.id ? (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => deleteBlock(block.id)}
-                  className="px-2 py-1 text-xs bg-red-500/20 text-red-500 border border-red-400/40 rounded-lg hover:bg-red-500/30 transition-all"
-                >
-                  삭제
-                </button>
-                <button
-                  onClick={() => setDeleteConfirm(null)}
-                  className="px-2 py-1 text-xs text-sky-500 hover:text-sky-700 transition-all"
-                >
-                  취소
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setDeleteConfirm(block.id)}
-                title="블록 삭제"
-                className="p-1.5 rounded-lg text-sky-400 hover:text-red-400 hover:bg-red-400/10 transition-all"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            )}
+            <button
+              onClick={() => setConfirmDeleteBlock(block.id)}
+              title="블록 삭제"
+              className="p-1.5 rounded-lg text-sky-400 hover:text-red-400 hover:bg-red-400/10 transition-all"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -603,6 +718,20 @@ export default function NoteDetailPage() {
               onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
             />
           )}
+          {block.type === 'credential' && (
+            <CredentialBlock
+              content={block.content as Parameters<typeof CredentialBlock>[0]['content']}
+              isEditing={isEditing}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'license' && (
+            <LicenseBlock
+              content={block.content as Parameters<typeof LicenseBlock>[0]['content']}
+              isEditing={isEditing}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
         </div>
       </div>
     )
@@ -667,7 +796,7 @@ export default function NoteDetailPage() {
 
             {isEditMode ? (
               <button
-                onClick={handleComplete}
+                onClick={() => setConfirmComplete(true)}
                 disabled={saving}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-sky-500 text-white hover:bg-sky-400 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
               >
@@ -716,7 +845,7 @@ export default function NoteDetailPage() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         {/* Tabs bar */}
-        <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
           <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.8)' }}>
             {tabs.map((tab) => (
               <div
@@ -781,57 +910,173 @@ export default function NoteDetailPage() {
               </button>
             )}
           </div>
+
         </div>
 
-        {/* Blocks */}
-        <div className="space-y-4">
-          {activeTabBlocks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-2xl glass-card flex items-center justify-center text-3xl mb-4">
-                📄
-              </div>
-              <h3 className="text-sky-950 font-semibold mb-2">빈 탭입니다</h3>
-              <p className="text-sky-600 text-sm mb-6 max-w-xs">
-                {isEditMode
-                  ? '블록을 추가해서 노트를 작성해보세요.'
-                  : '편집 버튼을 눌러 블록을 추가해보세요.'}
-              </p>
-              {isEditMode && (
-                <button
-                  onClick={() => { setBlockTypePage(0); setShowBlockTypeModal(true) }}
-                  className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all shadow-lg"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  블록 추가
-                </button>
-              )}
-            </div>
-          ) : (
-            <>
-              {isEditMode
-                ? activeTabBlocks.map(renderEditBlock)
-                : activeTabBlocks.map(renderViewBlock)
-              }
+        {/* 높이 측정 기준점 */}
+        <div ref={blocksAreaRef} />
 
-              {isEditMode && (
-                <div className="pt-2">
+        {/* Blocks */}
+        {(() => {
+          const isPageMode = !isEditMode && !!activeTabId && !!tabPageMode[activeTabId]
+          const currentPageNum = (activeTabId ? tabCurrentPage[activeTabId] : 0) ?? 0
+          const totalPages = Math.max(1, Math.ceil(innerH / availableH))
+
+          if (activeTabBlocks.length === 0) {
+            return (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-16 h-16 rounded-2xl glass-card flex items-center justify-center text-3xl mb-4">📄</div>
+                <h3 className="text-sky-950 font-semibold mb-2">빈 탭입니다</h3>
+                <p className="text-sky-600 text-sm mb-6 max-w-xs">
+                  {isEditMode ? '블록을 추가해서 노트를 작성해보세요.' : '편집 버튼을 눌러 블록을 추가해보세요.'}
+                </p>
+                {isEditMode && (
                   <button
                     onClick={() => { setBlockTypePage(0); setShowBlockTypeModal(true) }}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-sky-400/70 text-sky-700 font-semibold hover:border-sky-500 hover:bg-white/40 hover:text-sky-900 transition-all text-sm"
-                    style={{ background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)' }}
+                    className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all shadow-lg"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     블록 추가
                   </button>
+                )}
+              </div>
+            )
+          }
+
+          return (
+            <>
+              {/* 책 형식 페이지 보기 */}
+              {isPageMode ? (() => {
+                const animDir = activeTabId ? (tabAnimDir[activeTabId] ?? 'next') : 'next'
+                const goNext = () => {
+                  if (!activeTabId || currentPageNum >= totalPages - 1) return
+                  setTabAnimDir(p => ({ ...p, [activeTabId]: 'next' }))
+                  setAnimKey(k => k + 1)
+                  setTabCurrentPage(p => ({ ...p, [activeTabId]: currentPageNum + 1 }))
+                }
+                const goPrev = () => {
+                  if (!activeTabId || currentPageNum <= 0) return
+                  setTabAnimDir(p => ({ ...p, [activeTabId]: 'prev' }))
+                  setAnimKey(k => k + 1)
+                  setTabCurrentPage(p => ({ ...p, [activeTabId]: currentPageNum - 1 }))
+                }
+                const wheelCooldown = { current: false }
+                const handleWheel = (e: React.WheelEvent) => {
+                  e.preventDefault()
+                  if (wheelCooldown.current) return
+                  wheelCooldown.current = true
+                  setTimeout(() => { wheelCooldown.current = false }, 500)
+                  if (e.deltaY > 0) goNext(); else goPrev()
+                }
+                return (
+                  <div style={{ position: 'relative' }}>
+                    <style>{`
+                      @keyframes book-in-next {
+                        from { transform: translateX(5%); opacity: 0; }
+                        to   { transform: translateX(0);  opacity: 1; }
+                      }
+                      @keyframes book-in-prev {
+                        from { transform: translateX(-5%); opacity: 0; }
+                        to   { transform: translateX(0);   opacity: 1; }
+                      }
+                    `}</style>
+
+                    {/* 좌우 화살표 + 클립 래퍼 */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+
+                      {/* 이전 화살표 */}
+                      <button
+                        onClick={goPrev}
+                        disabled={currentPageNum === 0}
+                        className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:scale-110 active:scale-95"
+                        style={{ background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(14,165,233,0.35)', boxShadow: '0 2px 8px rgba(14,165,233,0.15)', backdropFilter: 'blur(8px)' }}
+                      >
+                        <svg className="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+
+                      {/* 콘텐츠 클립 영역 */}
+                      <div style={{ flex: 1, height: `${availableH}px`, overflow: 'hidden', position: 'relative' }} onWheel={handleWheel}>
+                        {/* 애니메이션 래퍼 (x축 슬라이드) */}
+                        <div
+                          key={animKey}
+                          style={{
+                            animation: `${animDir === 'next' ? 'book-in-next' : 'book-in-prev'} 0.32s cubic-bezier(.4,0,.2,1) both`,
+                          }}
+                        >
+                          {/* y축 오프셋 래퍼 */}
+                          <div
+                            ref={innerBlockRef}
+                            className="space-y-4"
+                            style={{ transform: `translateY(-${currentPageNum * availableH}px)` }}
+                          >
+                            {activeTabBlocks.map(renderViewBlock)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 다음 화살표 */}
+                      <button
+                        onClick={goNext}
+                        disabled={currentPageNum >= totalPages - 1}
+                        className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:scale-110 active:scale-95"
+                        style={{ background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(14,165,233,0.35)', boxShadow: '0 2px 8px rgba(14,165,233,0.15)', backdropFilter: 'blur(8px)' }}
+                      >
+                        <svg className="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* 페이지 인디케이터 */}
+                    <div className="flex items-center justify-center gap-1.5 mt-3">
+                      {Array.from({ length: totalPages }).map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            if (!activeTabId) return
+                            setTabAnimDir(p => ({ ...p, [activeTabId]: i > currentPageNum ? 'next' : 'prev' }))
+                            setAnimKey(k => k + 1)
+                            setTabCurrentPage(p => ({ ...p, [activeTabId]: i }))
+                          }}
+                          className={`rounded-full transition-all ${i === currentPageNum ? 'w-5 h-2 bg-sky-500' : 'w-2 h-2 bg-sky-300 hover:bg-sky-400'}`}
+                        />
+                      ))}
+                      <span
+                        className="text-sm font-bold ml-2"
+                        style={{ color: '#0c4a6e' }}
+                      >
+                        {currentPageNum + 1} / {totalPages}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })() : (
+                /* 일반 스크롤 보기 */
+                <div className="space-y-4">
+                  {isEditMode ? activeTabBlocks.map(renderEditBlock) : activeTabBlocks.map(renderViewBlock)}
+                  {isEditMode && (
+                    <div className="pt-2">
+                      <button
+                        onClick={() => { setBlockTypePage(0); setShowBlockTypeModal(true) }}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-sky-400/70 text-sky-700 font-semibold hover:border-sky-500 hover:bg-white/40 hover:text-sky-900 transition-all text-sm"
+                        style={{ background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)' }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        블록 추가
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </>
-          )}
-        </div>
+          )
+        })()}
       </div>
 
       {/* Block Type Modal */}
@@ -982,6 +1227,12 @@ export default function NoteDetailPage() {
                     {hoveredBlockType === 'list' && (
                       <ListBlock content={previewSample as Parameters<typeof ListBlock>[0]['content']} isEditing={false} onChange={() => {}} />
                     )}
+                    {hoveredBlockType === 'credential' && (
+                      <CredentialBlock content={previewSample as Parameters<typeof CredentialBlock>[0]['content']} isEditing={false} onChange={() => {}} />
+                    )}
+                    {hoveredBlockType === 'license' && (
+                      <LicenseBlock content={previewSample as Parameters<typeof LicenseBlock>[0]['content']} isEditing={false} onChange={() => {}} />
+                    )}
                   </div>
                   <p className="text-center text-xs text-sky-400 mt-3">클릭하면 이 블록이 추가됩니다</p>
                 </div>
@@ -990,6 +1241,63 @@ export default function NoteDetailPage() {
           </div>
         )
       })()}
+
+      {/* 페이지 모드 플로팅 토글 버튼 */}
+      {!isEditMode && activeTabId && (
+        <button
+          onClick={() => togglePageMode(activeTabId)}
+          title={tabPageMode[activeTabId] ? '스크롤 보기로 전환' : '한 화면 페이지 보기로 전환'}
+          className={`fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 ${
+            tabPageMode[activeTabId]
+              ? 'bg-sky-500 text-white shadow-sky-300'
+              : 'bg-white/90 text-sky-500 border border-sky-200 hover:border-sky-400'
+          }`}
+          style={{ backdropFilter: 'blur(12px)' }}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        </button>
+      )}
+
+      {/* 완료(저장) 확인 */}
+      <ConfirmDialog
+        isOpen={confirmComplete}
+        title="변경사항 저장"
+        message="편집한 내용을 저장하고 보기 모드로 전환하시겠습니까?"
+        confirmLabel="저장"
+        cancelLabel="취소"
+        variant="info"
+        onConfirm={() => { setConfirmComplete(false); handleComplete() }}
+        onCancel={() => setConfirmComplete(false)}
+      />
+
+      {/* 블록 삭제 확인 */}
+      <ConfirmDialog
+        isOpen={confirmDeleteBlock !== null}
+        title="블록 삭제"
+        message="이 블록을 삭제하시겠습니까? 삭제된 블록은 복구할 수 없습니다."
+        confirmLabel="삭제"
+        cancelLabel="취소"
+        variant="danger"
+        onConfirm={() => { const id = confirmDeleteBlock; setConfirmDeleteBlock(null); if (id) deleteBlock(id) }}
+        onCancel={() => setConfirmDeleteBlock(null)}
+      />
+
+      {/* 블록 복사/이동 모달 */}
+      {transferBlock && (
+        <BlockTransferModal
+          block={transferBlock}
+          currentNoteId={noteId}
+          onClose={() => setTransferBlock(null)}
+          onMoved={(blockId) => {
+            setBlocks(prev => prev.filter(b => b.id !== blockId))
+            delete pendingChanges.current[blockId]
+            delete pendingTitles.current[blockId]
+          }}
+          onCopied={() => {}}
+        />
+      )}
     </div>
   )
 }

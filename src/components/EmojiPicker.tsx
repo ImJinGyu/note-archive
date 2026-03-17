@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 
@@ -46,8 +46,8 @@ export default function EmojiPicker({ value, onChange }: EmojiPickerProps) {
                   onClick={() => setActiveCategory(cat)}
                   className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                     activeCategory === cat
-                      ? 'bg-sky-500/20 dark:bg-[#38bdf8]/20 text-sky-500 dark:text-[#38bdf8]'
-                      : 'text-sky-600 dark:text-[#8b949e] hover:text-sky-900 dark:hover:text-[#c9d1d9] hover:bg-sky-100 dark:hover:bg-[#21262d]'
+                      ? 'bg-sky-500/20 dark:bg-[#38bdf8]/20 text-sky-800 dark:text-[#38bdf8]'
+                      : 'text-sky-900 dark:text-[#8b949e] hover:text-sky-900 dark:hover:text-[#c9d1d9] hover:bg-sky-100 dark:hover:bg-[#21262d]'
                   }`}
                 >
                   {cat}
