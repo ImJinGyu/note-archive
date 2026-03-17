@@ -112,8 +112,7 @@ export default function EditNotePage() {
 
     setSaving(true)
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const updateData: Record<string, any> = {
+      const updateData: Partial<Note> = {
         icon,
         title: title.trim(),
         description: description.trim() || null,
