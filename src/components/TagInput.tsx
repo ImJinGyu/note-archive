@@ -35,17 +35,17 @@ export default function TagInput({ tags, onChange }: TagInputProps) {
   }
 
   return (
-    <div className="min-h-[44px] flex flex-wrap gap-2 items-center bg-[#f0f9ff] dark:bg-[#0d1117] border border-sky-200 dark:border-[#30363d] rounded-lg px-3 py-2 focus-within:border-sky-500 dark:focus-within:border-[#38bdf8] focus-within:shadow-[0_0_0_3px_rgba(14,165,233,0.1)] transition-all">
+    <div className="min-h-[44px] flex flex-wrap gap-2 items-center bg-white/75 border border-sky-300/60 rounded-lg px-3 py-2 focus-within:border-sky-500 focus-within:shadow-[0_0_0_3px_rgba(14,165,233,0.1)] transition-all">
       {tags.map((tag, i) => (
         <span
           key={i}
-          className="flex items-center gap-1 bg-sky-500/10 dark:bg-[#38bdf8]/10 text-sky-500 dark:text-[#38bdf8] border border-sky-500/30 dark:border-[#38bdf8]/30 rounded-full px-3 py-0.5 text-sm"
+          className="flex items-center gap-1 bg-sky-500/15 text-sky-700 border border-sky-500/30 rounded-full px-3 py-0.5 text-sm"
         >
           #{tag}
           <button
             type="button"
             onClick={() => removeTag(i)}
-            className="ml-1 text-sky-500/60 dark:text-[#38bdf8]/60 hover:text-sky-500 dark:hover:text-[#38bdf8] transition-colors leading-none"
+            className="ml-1 text-sky-400 hover:text-sky-600 transition-colors leading-none"
           >
             ×
           </button>
@@ -58,7 +58,7 @@ export default function TagInput({ tags, onChange }: TagInputProps) {
         onKeyDown={handleKeyDown}
         onBlur={() => input && addTag(input)}
         placeholder={tags.length === 0 ? 'Enter 또는 쉼표로 태그 추가...' : ''}
-        className="flex-1 min-w-[120px] bg-transparent outline-none text-sky-900 dark:text-[#c9d1d9] placeholder-sky-400 dark:placeholder-[#8b949e] text-sm"
+        className="flex-1 min-w-[120px] bg-transparent outline-none text-sky-900 placeholder-sky-400 text-sm"
       />
     </div>
   )

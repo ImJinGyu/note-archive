@@ -86,6 +86,22 @@ CREATE TRIGGER trg_documents_updated_at
   BEFORE UPDATE ON documents
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+-- =====================
+-- blocked_ips (IP 차단)
+-- =====================
+CREATE TABLE IF NOT EXISTS blocked_ips (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ip         TEXT NOT NULL UNIQUE,
+  reason     TEXT,
+  blocked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_blocked_ips_ip ON blocked_ips(ip);
+
+-- anon 역할에 SELECT 권한 부여 (미들웨어에서 anon key로 IP 차단 여부 조회)
+ALTER TABLE blocked_ips ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "Anon can read blocked_ips" ON blocked_ips FOR SELECT TO anon USING (true);
+CREATE POLICY IF NOT EXISTS "Authenticated can manage blocked_ips" ON blocked_ips FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
 -- ============================================================
 -- MIGRATION: Run this if the table already exists
 -- ============================================================

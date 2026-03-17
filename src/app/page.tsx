@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/Toast'
 import AuthModal from '@/components/auth/AuthModal'
 import TrashModal from '@/components/TrashModal'
 import DocsModal from '@/components/DocsModal'
+import AccountModal from '@/components/AccountModal'
 import bcrypt from 'bcryptjs'
 
 export default function HomePage() {
@@ -26,6 +27,7 @@ export default function HomePage() {
   const [deletePasswordNote, setDeletePasswordNote] = useState<Note | null>(null)
   const [showTrash, setShowTrash] = useState(false)
   const [showDocs, setShowDocs] = useState(false)
+  const [showAccount, setShowAccount] = useState(false)
 
   // Auth state
   const [user, setUser] = useState<User | null>(null)
@@ -33,15 +35,42 @@ export default function HomePage() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authTab, setAuthTab] = useState<'login' | 'signup'>('login')
 
+  // MFA AAL 체크: nextLevel이 aal2인데 currentLevel이 aal1이면 MFA 미완료 → user 설정 안 함
+  const checkAalAndSetUser = async (sessionUser: typeof user) => {
+    if (!sessionUser) { setUser(null); return }
+    try {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (aal?.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
+        setUser(null) // MFA 완료 전 → 대시보드 진입 차단
+      } else {
+        setUser(sessionUser)
+      }
+    } catch {
+      // AAL 체크 실패 시 세션 유저 그대로 사용 (fail-open)
+      setUser(sessionUser)
+    }
+  }
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setAuthLoading(false)
-    })
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }) => {
+        await checkAalAndSetUser(session?.user ?? null)
+      })
+      .catch(() => {
+        setUser(null)
+      })
+      .finally(() => {
+        setAuthLoading(false)
+      })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      // setTimeout으로 Supabase 내부 auth lock 컨텍스트 밖에서 실행
+      // mfa.verify()가 lock 보유 중 onAuthStateChange를 호출할 때
+      // checkAalAndSetUser 내부의 mfa.getAuthenticatorAssuranceLevel()이
+      // 같은 lock을 요청하면 영원히 대기하는 데드락 발생 → 0ms 지연으로 해결
+      setTimeout(() => checkAalAndSetUser(session?.user ?? null), 0)
     })
     return () => subscription.unsubscribe()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchNotes = useCallback(async () => {
@@ -140,84 +169,74 @@ export default function HomePage() {
 
   const lockedCount = notes.filter((n) => n.is_locked).length
 
-  // ── 비로그인 랜딩 페이지 ──────────────────────────────────────────────
-  if (!authLoading && !user) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
-        {/* 중앙 글래스 카드 */}
-        <div className="w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
-          style={{ background: 'rgba(10, 20, 50, 0.62)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.15)' }}>
+  const isLanding = !authLoading && !user
 
-          {/* 상단 뱃지 + 배경 선택 */}
-          <div className="flex justify-between items-center pt-6 px-2">
-            <div className="w-8" />
-            <span className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-xs text-white/80 font-medium">
-              <span className="text-base">📝</span> Note Archive
-            </span>
-          </div>
-
-          {/* 히어로 텍스트 */}
-          <div className="text-center px-8 pt-6 pb-8">
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight mb-4">
-              나만의 지식을<br />
-              <span style={{ background: 'linear-gradient(90deg, #7dd3fc, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                스마트하게 관리
-              </span>
-            </h1>
-            <p className="text-white/60 text-sm sm:text-base leading-relaxed max-w-md mx-auto">
-              아이디어, 코드 스니펫, 학습 내용을 탭과 블록으로 구조화하여<br className="hidden sm:block" />
-              한 곳에서 체계적으로 관리하세요.
-            </p>
-          </div>
-
-          {/* 액션 카드 2개 */}
-          <div className="grid grid-cols-2 gap-4 px-8 pb-10">
-            {/* 로그인 카드 */}
-            <button
-              onClick={() => { setAuthTab('login'); setShowAuthModal(true) }}
-              className="group rounded-2xl p-5 text-left transition-all hover:scale-[1.02]"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center mb-3 shadow-lg">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
-              </div>
-              <h3 className="text-white font-bold text-base mb-1">로그인</h3>
-              <p className="text-white/50 text-xs leading-relaxed">기존 계정으로 내 노트에 접근하세요.</p>
-            </button>
-
-            {/* 회원가입 카드 */}
-            <button
-              onClick={() => { setAuthTab('signup'); setShowAuthModal(true) }}
-              className="group rounded-2xl p-5 text-left transition-all hover:scale-[1.02]"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center mb-3 shadow-lg">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
-              </div>
-              <h3 className="text-white font-bold text-base mb-1">회원가입</h3>
-              <p className="text-white/50 text-xs leading-relaxed">무료로 시작하고 어디서든 접근하세요.</p>
-            </button>
-          </div>
-        </div>
-
-        {/* Auth Modal */}
-        <AuthModal
-          isOpen={showAuthModal}
-          initialTab={authTab}
-          onClose={() => setShowAuthModal(false)}
-          onSuccess={fetchNotes}
-        />
-      </div>
-    )
-  }
-
-  // ── 로그인된 대시보드 ─────────────────────────────────────────────────
+  // ── 단일 return: AuthModal이 항상 같은 트리 위치에 있어야 MFA step 보존됨 ──
   return (
     <div className="min-h-screen">
+
+      {/* ── 비로그인 랜딩 페이지 ── */}
+      {isLanding && (
+        <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
+          <div className="w-full max-w-2xl mb-3 px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs text-white"
+            style={{ background: 'rgba(14,100,180,0.55)', border: '1px solid rgba(100,180,255,0.5)', backdropFilter: 'blur(8px)' }}>
+            <span className="text-sm">ℹ️</span>
+            <span>본 서비스는 실제 상업용 서비스가 아닌 개인 프로젝트 및 개인 사용 목적으로 운영되는 서비스입니다.</span>
+          </div>
+          <div className="w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
+            style={{ background: 'rgba(10, 20, 50, 0.62)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.15)' }}>
+            <div className="flex justify-between items-center pt-6 px-2">
+              <div className="w-8" />
+              <span className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-xs text-white/80 font-medium">
+                <span className="text-base">📝</span> Note Archive
+              </span>
+            </div>
+            <div className="text-center px-8 pt-6 pb-8">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight mb-4">
+                나만의 지식을<br />
+                <span style={{ background: 'linear-gradient(90deg, #7dd3fc, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  스마트하게 관리
+                </span>
+              </h1>
+              <p className="text-white/60 text-sm sm:text-base leading-relaxed max-w-md mx-auto">
+                아이디어, 코드 스니펫, 학습 내용을 탭과 블록으로 구조화하여<br className="hidden sm:block" />
+                한 곳에서 체계적으로 관리하세요.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 px-8 pb-10">
+              <button
+                onClick={() => { setAuthTab('login'); setShowAuthModal(true) }}
+                className="group rounded-2xl p-5 text-left transition-all hover:scale-[1.02]"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center mb-3 shadow-lg">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                </div>
+                <h3 className="text-white font-bold text-base mb-1">로그인</h3>
+                <p className="text-white/50 text-xs leading-relaxed">기존 계정으로 내 노트에 접근하세요.</p>
+              </button>
+              <button
+                onClick={() => { setAuthTab('signup'); setShowAuthModal(true) }}
+                className="group rounded-2xl p-5 text-left transition-all hover:scale-[1.02]"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center mb-3 shadow-lg">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                </div>
+                <h3 className="text-white font-bold text-base mb-1">회원가입</h3>
+                <p className="text-white/50 text-xs leading-relaxed">무료로 시작하고 어디서든 접근하세요.</p>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 로그인된 대시보드 ── */}
+      {!isLanding && user && (<>
       {/* Header */}
       <header className="glass-header sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -228,6 +247,16 @@ export default function HomePage() {
             <h1 className="text-xl font-bold text-sky-900 drop-shadow">Note Archive</h1>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowAccount(true)}
+              title="계정 설정"
+              className="p-2 rounded-xl bg-white/30 hover:bg-white/50 border border-white/40 text-sky-700 hover:text-sky-500 transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
             <button
               onClick={() => setShowDocs(true)}
               title="문서 가이드"
@@ -269,13 +298,13 @@ export default function HomePage() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 relative">
 
         {/* Dashboard top panel */}
-        <div className="rounded-2xl mb-8 overflow-hidden" style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.85)', boxShadow: '0 4px 32px rgba(0,60,120,0.08)' }}>
+        <div className="rounded-2xl mb-8 overflow-hidden" style={{ background: 'rgba(210,235,255,0.92)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56,170,230,0.30)', boxShadow: '0 4px 32px rgba(0,80,160,0.14)' }}>
           {/* Hero row */}
           <div className="px-6 pt-6 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <p className="text-xs font-semibold text-sky-500 uppercase tracking-widest mb-1">My Workspace</p>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-sky-950 leading-tight">
-                나의 <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(90deg, #0ea5e9, #6366f1)' }}>지식 창고</span>
+                나의 <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(90deg, #0ea5e9, #6366f1)' }}>스토리지</span>
               </h2>
             </div>
 
@@ -289,7 +318,7 @@ export default function HomePage() {
                 placeholder="노트 검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/80 border border-sky-100 rounded-xl pl-10 pr-9 py-2.5 text-sky-900 placeholder-sky-300 text-sm outline-none focus:border-sky-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(14,165,233,0.12)] transition-all"
+                className="w-full bg-white/70 border border-sky-300/50 rounded-xl pl-10 pr-9 py-2.5 text-sky-900 placeholder-sky-400 text-sm outline-none focus:border-sky-500 focus:bg-white/90 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)] transition-all"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-300 hover:text-sky-600 transition-colors">
@@ -488,7 +517,18 @@ export default function HomePage() {
         onRestore={fetchNotes}
       />
 
-      {/* Auth Modal */}
+      {/* Account Modal */}
+      {user && (
+        <AccountModal
+          isOpen={showAccount}
+          user={user}
+          onClose={() => setShowAccount(false)}
+          onSignOut={() => { setShowAccount(false); fetchNotes() }}
+        />
+      )}
+      </>)}
+
+      {/* ── AuthModal: 항상 동일한 트리 위치 (랜딩/대시보드 전환 시 리마운트 방지) ── */}
       <AuthModal
         isOpen={showAuthModal}
         initialTab={authTab}

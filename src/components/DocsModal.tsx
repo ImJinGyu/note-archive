@@ -195,11 +195,11 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
       >
         {/* ── Sidebar ── */}
         <div
-          className="w-56 flex-shrink-0 flex flex-col border-r border-sky-100"
+          className="w-56 flex-shrink-0 flex flex-col border-r border-sky-300/50"
           style={{ background: 'rgba(240,249,255,0.7)' }}
         >
           {/* Sidebar header */}
-          <div className="px-4 py-4 border-b border-sky-100">
+          <div className="px-4 py-4 border-b border-sky-300/50">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-7 h-7 rounded-lg bg-sky-500 flex items-center justify-center flex-shrink-0">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,7 +240,7 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
 
           {/* New doc name input */}
           {isCreating && (
-            <div className="px-3 py-2 border-b border-sky-100 bg-sky-50">
+            <div className="px-3 py-2 border-b border-sky-300/50 bg-sky-50">
               <input
                 autoFocus
                 value={newDocName}
@@ -274,7 +274,7 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
                   key={doc.id}
                   className={`group mx-2 mb-0.5 px-3 py-2 rounded-xl cursor-pointer transition-all ${
                     selectedId === doc.id
-                      ? 'bg-white shadow-sm border border-sky-100'
+                      ? 'bg-white shadow-sm border border-sky-300/50'
                       : 'hover:bg-white/60'
                   }`}
                   onClick={() => handleSelect(doc)}
@@ -337,7 +337,7 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
         {/* ── Main content ── */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Content header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-sky-100 flex-shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-sky-300/50 flex-shrink-0">
             {isEditing ? (
               <input
                 value={editName}

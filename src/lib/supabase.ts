@@ -1,9 +1,57 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// 자동로그인 여부에 따라 localStorage / sessionStorage를 동적으로 선택하는 storage adapter.
+// 로그인 직전에 localStorage.setItem('remember_me', 'true'|'false') 를 설정해두면
+// Supabase가 세션을 쓸 때 이 adapter가 적절한 스토리지에 저장함.
+// try/catch로 Edge 등 브라우저별 storage 오류에 대비함.
+const authStorageAdapter = {
+  getItem: (key: string): string | null => {
+    if (typeof window === 'undefined') return null
+    try {
+      return localStorage.getItem(key) ?? sessionStorage.getItem(key)
+    } catch { return null }
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window === 'undefined') return
+    try {
+      const remember = localStorage.getItem('remember_me') !== 'false'
+      if (remember) {
+        localStorage.setItem(key, value)
+        sessionStorage.removeItem(key)
+      } else {
+        sessionStorage.setItem(key, value)
+        localStorage.removeItem(key)
+      }
+    } catch { /* 저장 실패 무시 */ }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.removeItem(key)
+      sessionStorage.removeItem(key)
+    } catch { /* 무시 */ }
+  },
+}
+
+// HMR 시 모듈 재평가로 인한 다중 인스턴스 생성 방지 (AbortError: Lock broken 방지)
+// globalThis 대신 모듈 수준 변수 사용 — Edge 호환성 문제 없음
+// eslint-disable-next-line prefer-const
+let _client: ReturnType<typeof createClient> | null = null
+
+export const supabase = (() => {
+  if (_client) return _client
+  _client = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      storage: authStorageAdapter,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  })
+  return _client
+})()
 
 export type Note = {
   id: string

@@ -124,8 +124,11 @@ export default function NoteDetailPage() {
   }, [noteId, router])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { router.replace('/'); return }
+      fetchData()
+    })
+  }, [fetchData, router])
 
   useEffect(() => {
     if (editingTabId && tabInputRef.current) {
@@ -301,7 +304,7 @@ export default function NoteDetailPage() {
               <span className="text-base">{blockTypeInfo(block.type)?.icon}</span>
               {block.title}
             </h3>
-            <div className="mt-2 h-px bg-sky-100" />
+            <div className="mt-2 h-px bg-sky-300/60" />
           </div>
         )}
         <div className="p-5">
@@ -402,7 +405,7 @@ export default function NoteDetailPage() {
     return (
       <div key={block.id} className="block-container glass-card rounded-xl overflow-hidden">
         {/* Block toolbar */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-sky-100/80 bg-sky-50/60">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b-2 border-sky-300/70 bg-sky-100/60">
           <div className="flex items-center gap-2">
             <span className="text-base">{info?.icon}</span>
             <span className="text-xs text-sky-600 font-medium">{info?.label}</span>
@@ -900,7 +903,7 @@ export default function NoteDetailPage() {
                   ))}
                 </div>
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-sky-100">
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-sky-300/50">
                     <button
                       onClick={() => setBlockTypePage((p) => Math.max(0, p - 1))}
                       disabled={blockTypePage === 0}
@@ -936,13 +939,13 @@ export default function NoteDetailPage() {
 
               {/* Right: preview panel */}
               {hoveredBlockType && previewSample && (
-                <div className="flex-1 border-l border-sky-100 bg-sky-50/40 p-6 overflow-y-auto" style={{ maxHeight: '600px', minWidth: 0 }}>
+                <div className="flex-1 border-l border-sky-300/50 bg-sky-50/40 p-6 overflow-y-auto" style={{ maxHeight: '600px', minWidth: 0 }}>
                   <div className="flex items-center gap-2 mb-4">
                     <span className="text-base">{BLOCK_TYPES.find(b => b.type === hoveredBlockType)?.icon}</span>
                     <span className="text-sky-800 font-semibold text-sm">{BLOCK_TYPES.find(b => b.type === hoveredBlockType)?.label} 미리보기</span>
                     <span className="ml-auto text-[10px] text-sky-400 bg-sky-100 px-2 py-0.5 rounded-full">샘플</span>
                   </div>
-                  <div className="bg-white/80 rounded-xl p-4 border border-sky-100 shadow-sm text-sm">
+                  <div className="bg-white/80 rounded-xl p-4 border border-sky-300/50 shadow-sm text-sm">
                     {hoveredBlockType === 'text' && (
                       <TextBlock content={previewSample as Parameters<typeof TextBlock>[0]['content']} isEditing={false} onChange={() => {}} />
                     )}

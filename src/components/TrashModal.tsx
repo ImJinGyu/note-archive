@@ -94,7 +94,7 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-sky-100">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-sky-300/50">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center">
               <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,7 +145,7 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
               {trashedNotes.map((note) => (
                 <div
                   key={note.id}
-                  className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-sky-100 hover:border-sky-200 transition-all"
+                  className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-sky-300/50 hover:border-sky-200 transition-all"
                 >
                   <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center text-xl flex-shrink-0">
                     {note.icon}
@@ -170,7 +170,7 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
                     {note.tags && note.tags.length > 0 && (
                       <div className="flex gap-1 mt-1">
                         {note.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="text-[10px] text-sky-500 bg-sky-50 border border-sky-100 px-1.5 py-0.5 rounded-full">#{tag}</span>
+                          <span key={tag} className="text-[10px] text-sky-500 bg-sky-50 border border-sky-300/50 px-1.5 py-0.5 rounded-full">#{tag}</span>
                         ))}
                       </div>
                     )}

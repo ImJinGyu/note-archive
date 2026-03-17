@@ -41,12 +41,12 @@ export default function PasswordModal({ noteTitle, noteIcon, confirmLabel = '열
       >
         {/* Icon */}
         <div className="flex flex-col items-center mb-5">
-          <div className="w-16 h-16 rounded-2xl bg-sky-100 dark:bg-[#21262d] flex items-center justify-center text-3xl mb-3">
+          <div className="w-16 h-16 rounded-2xl bg-sky-100 flex items-center justify-center text-3xl mb-3">
             {noteIcon}
           </div>
           <div className="text-center">
-            <h2 className="text-sky-950 dark:text-[#e6edf3] font-semibold text-lg">{noteTitle}</h2>
-            <p className="text-sky-600 dark:text-[#8b949e] text-sm mt-1 flex items-center justify-center gap-1.5">
+            <h2 className="text-sky-950 font-semibold text-lg">{noteTitle}</h2>
+            <p className="text-sky-600 text-sm mt-1 flex items-center justify-center gap-1.5">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
               </svg>
@@ -66,10 +66,10 @@ export default function PasswordModal({ noteTitle, noteIcon, confirmLabel = '열
               }}
               placeholder="비밀번호 입력..."
               autoFocus
-              className={`w-full bg-white/80 dark:bg-white/10 border rounded-lg px-4 py-3 text-sky-900 dark:text-white placeholder-sky-400 dark:placeholder-white/40 outline-none transition-all ${
+              className={`w-full bg-white border rounded-lg px-4 py-3 text-sky-900 placeholder-sky-400 outline-none transition-all ${
                 error
                   ? 'border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]'
-                  : 'border-sky-200 dark:border-white/20 focus:border-sky-500 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.1)]'
+                  : 'border-sky-200 focus:border-sky-500 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.1)]'
               }`}
             />
             {error && (
@@ -86,14 +86,14 @@ export default function PasswordModal({ noteTitle, noteIcon, confirmLabel = '열
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-lg border border-sky-200/60 dark:border-white/20 text-sky-600 dark:text-sky-300 hover:text-sky-900 dark:hover:text-white hover:bg-sky-100/50 dark:hover:bg-white/10 transition-all font-medium"
+              className="flex-1 px-4 py-2.5 rounded-lg border-2 border-sky-400 text-sky-800 bg-white/40 hover:bg-white/70 hover:border-sky-500 hover:text-sky-950 transition-all font-medium"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2.5 rounded-lg bg-sky-500 dark:bg-[#38bdf8] hover:bg-sky-400 dark:hover:bg-[#7dd3fc] text-white dark:text-[#0d1117] font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-white font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">

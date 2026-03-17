@@ -58,6 +58,12 @@ export default function EditNotePage() {
   const [errors, setErrors] = useState<{ title?: string; password?: string }>({})
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { router.replace('/'); return }
+    })
+  }, [router])
+
+  useEffect(() => {
     const fetchNote = async () => {
       setLoading(true)
       const { data, error } = await supabase

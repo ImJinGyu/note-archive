@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -40,6 +40,12 @@ export default function NewNotePage() {
   const router = useRouter()
   const { showToast } = useToast()
   const [icon, setIcon] = useState('📝')
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) router.replace('/')
+    })
+  }, [router])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [tags, setTags] = useState<string[]>([])
@@ -139,13 +145,13 @@ export default function NewNotePage() {
         <div className="glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
           {/* Emoji picker */}
           <div>
-            <label className="block text-sm font-medium text-sky-700 dark:text-sky-300 mb-3">아이콘 선택</label>
+            <label className="block text-sm font-medium text-sky-700 mb-3">아이콘 선택</label>
             <EmojiPicker value={icon} onChange={setIcon} />
           </div>
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-sky-700 dark:text-sky-300 mb-2">
+            <label className="block text-sm font-medium text-sky-700 mb-2">
               제목 <span className="text-red-400">*</span>
             </label>
             <input
@@ -156,10 +162,10 @@ export default function NewNotePage() {
                 if (errors.title) setErrors({ ...errors, title: undefined })
               }}
               placeholder="노트 제목을 입력하세요..."
-              className={`w-full bg-white/80 dark:bg-white/10 border rounded-xl px-4 py-3 text-sky-900 dark:text-white placeholder-sky-400 dark:placeholder-white/40 outline-none text-base font-medium transition-all ${
+              className={`w-full bg-white/75 border rounded-xl px-4 py-3 text-sky-900 placeholder-sky-400 outline-none text-base font-medium transition-all ${
                 errors.title
                   ? 'border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]'
-                  : 'border-sky-200 dark:border-white/20 focus:border-sky-500 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.1)]'
+                  : 'border-sky-300/60 focus:border-sky-500 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.1)]'
               }`}
             />
             {errors.title && (
@@ -174,30 +180,30 @@ export default function NewNotePage() {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-sky-700 dark:text-sky-300 mb-2">설명</label>
+            <label className="block text-sm font-medium text-sky-700 mb-2">설명</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="노트에 대한 간략한 설명을 입력하세요..."
               rows={3}
-              className="w-full bg-white/80 dark:bg-white/10 border border-sky-200 dark:border-white/20 rounded-xl px-4 py-3 text-sky-900 dark:text-white placeholder-sky-400 dark:placeholder-white/40 outline-none resize-none focus:border-sky-500 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.1)] transition-all"
+              className="w-full bg-white/75 border border-sky-300/60 rounded-xl px-4 py-3 text-sky-900 placeholder-sky-400 outline-none resize-none focus:border-sky-500 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.1)] transition-all"
             />
           </div>
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-sky-700 dark:text-sky-300 mb-2">태그</label>
+            <label className="block text-sm font-medium text-sky-700 mb-2">태그</label>
             <TagInput tags={tags} onChange={setTags} />
-            <p className="mt-1.5 text-xs text-sky-500 dark:text-sky-400">Enter 또는 쉼표(,)로 태그를 추가할 수 있습니다.</p>
+            <p className="mt-1.5 text-xs text-sky-500">Enter 또는 쉼표(,)로 태그를 추가할 수 있습니다.</p>
           </div>
 
           {/* Lock */}
-          <div className="border border-sky-200/60 dark:border-white/20 rounded-xl p-4 bg-white/30 dark:bg-white/5">
+          <div className="border border-sky-300/50 rounded-xl p-4 bg-white/50">
             <label className="flex items-center gap-3 cursor-pointer">
               <div
                 onClick={() => setIsLocked(!isLocked)}
                 className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
-                  isLocked ? 'bg-sky-500' : 'bg-sky-200 dark:bg-white/20'
+                  isLocked ? 'bg-sky-500' : 'bg-sky-200'
                 }`}
               >
                 <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
@@ -205,13 +211,13 @@ export default function NewNotePage() {
                 }`} />
               </div>
               <div>
-                <span className="text-sky-900 dark:text-white font-medium text-sm flex items-center gap-2">
+                <span className="text-sky-900 font-medium text-sm flex items-center gap-2">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                   </svg>
                   암호 설정
                 </span>
-                <p className="text-xs text-sky-600 dark:text-sky-400 mt-0.5">비밀번호로 노트를 보호합니다.</p>
+                <p className="text-xs text-sky-600 mt-0.5">비밀번호로 노트를 보호합니다.</p>
               </div>
             </label>
 
@@ -228,16 +234,16 @@ export default function NewNotePage() {
                     placeholder="숫자 4~6자리 입력..."
                     maxLength={6}
                     inputMode="numeric"
-                    className={`w-full bg-white/80 dark:bg-white/10 border rounded-lg px-4 py-2.5 pr-10 text-sky-900 dark:text-white placeholder-sky-400 dark:placeholder-white/40 outline-none text-sm transition-all ${
+                    className={`w-full bg-white/80 border rounded-lg px-4 py-2.5 pr-10 text-sky-900 placeholder-sky-400 outline-none text-sm transition-all ${
                       errors.password
                         ? 'border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]'
-                        : 'border-sky-200 dark:border-white/20 focus:border-sky-500 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.1)]'
+                        : 'border-sky-300/60 focus:border-sky-500 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.1)]'
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-400 hover:text-sky-900 dark:hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-400 hover:text-sky-900 transition-colors"
                   >
                     {showPassword ? (
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -267,19 +273,19 @@ export default function NewNotePage() {
           {/* Preview */}
           {title && (
             <div>
-              <label className="block text-sm font-medium text-sky-700 dark:text-sky-300 mb-2">미리보기</label>
-              <div className="bg-white/50 dark:bg-white/5 border border-sky-200/60 dark:border-white/10 rounded-xl p-4">
+              <label className="block text-sm font-medium text-sky-700 mb-2">미리보기</label>
+              <div className="bg-white/50 border border-sky-200/60 rounded-xl p-4">
                 <div className="flex items-start gap-3">
                   <span className="text-3xl">{icon}</span>
                   <div className="flex-1">
-                    <h3 className="text-sky-950 dark:text-white font-semibold">{title}</h3>
+                    <h3 className="text-sky-950 font-semibold">{title}</h3>
                     {description && (
-                      <p className="text-sky-600 dark:text-sky-300 text-sm mt-1">{description}</p>
+                      <p className="text-sky-600 text-sm mt-1">{description}</p>
                     )}
                     {tags.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {tags.map((tag) => (
-                          <span key={tag} className="text-xs bg-sky-500/10 text-sky-500 dark:text-sky-300 border border-sky-500/30 rounded-full px-2 py-0.5">
+                          <span key={tag} className="text-xs bg-sky-500/10 text-sky-500 border border-sky-500/30 rounded-full px-2 py-0.5">
                             #{tag}
                           </span>
                         ))}
@@ -287,7 +293,7 @@ export default function NewNotePage() {
                     )}
                   </div>
                   {isLocked && (
-                    <svg className="w-4 h-4 text-sky-600 dark:text-sky-400" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4 text-sky-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                     </svg>
                   )}
@@ -300,7 +306,7 @@ export default function NewNotePage() {
           <div className="flex items-center gap-3 pt-2">
             <Link
               href="/"
-              className="flex-1 text-center px-6 py-3 rounded-xl border border-sky-200/60 dark:border-white/20 text-sky-700 dark:text-sky-300 hover:text-sky-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10 transition-all font-medium"
+              className="flex-1 text-center px-6 py-3 rounded-xl border-2 border-sky-400 text-sky-800 bg-white/40 hover:bg-white/70 hover:border-sky-500 hover:text-sky-950 transition-all font-medium"
             >
               취소
             </Link>

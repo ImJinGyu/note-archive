@@ -113,7 +113,7 @@ export default function NoteCard({ note, onClick, onEdit, onDelete }: NoteCardPr
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-sky-100">
+      <div className="flex items-center justify-between pt-3 border-t border-sky-300/50">
         <span className="text-xs text-sky-500">{formatDate(note.updated_at)}</span>
         <span className="text-xs text-sky-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
           열기

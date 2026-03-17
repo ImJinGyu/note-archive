@@ -177,7 +177,7 @@ export default function TableBlock({ content, isEditing, onChange }: TableBlockP
         </thead>
         <tbody>
           {localRows.map((row, ri) => (
-            <tr key={ri} className="hover:bg-sky-50/60 transition-colors border-b border-sky-100 last:border-0">
+            <tr key={ri} className="hover:bg-sky-50/60 transition-colors border-b border-sky-300/50 last:border-0">
               {localColumns.map((_, ci) => (
                 <td key={ci} className="px-4 py-3 text-sky-900 text-sm">
                   {row[ci] || <span className="text-sky-300">-</span>}

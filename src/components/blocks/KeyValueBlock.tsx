@@ -80,15 +80,22 @@ export default function KeyValueBlock({ content, isEditing, onChange }: KeyValue
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-1.5">
       {localItems.map((item, index) => (
-        <div key={index} className="flex items-center gap-0 rounded-lg overflow-hidden border border-sky-200 shadow-sm text-sm">
-          <span className="px-3 py-1.5 bg-sky-500 text-white font-semibold whitespace-nowrap">{item.key}</span>
-          <span className="px-3 py-1.5 bg-white text-sky-700 whitespace-nowrap">{item.value}</span>
+        <div
+          key={index}
+          className="flex items-stretch text-sm rounded-lg overflow-hidden border border-sky-200 shadow-sm"
+        >
+          <span className="px-3 py-2 bg-sky-500/15 text-sky-800 font-semibold text-xs border-r border-sky-200 whitespace-nowrap flex-shrink-0 flex items-center">
+            {item.key}
+          </span>
+          <span className="flex-1 px-3 py-2 bg-white/70 text-sky-700 break-all min-w-0 flex items-center">
+            {item.value}
+          </span>
           <button
             onClick={() => copyToClipboard(item.value, index)}
             title="복사"
-            className="px-2 py-1.5 bg-white border-l border-sky-100 text-sky-300 hover:text-sky-500 hover:bg-sky-50 transition-colors"
+            className="w-8 flex items-center justify-center bg-white/70 border-l border-sky-300/50 text-sky-300 hover:text-sky-500 hover:bg-sky-50 transition-colors flex-shrink-0"
           >
             {copiedIndex === index ? (
               <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
