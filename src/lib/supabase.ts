@@ -1,4 +1,75 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
+
+type NoteRow = {
+  id: string
+  icon: string
+  title: string
+  description: string | null
+  tags: string[]
+  is_locked: boolean
+  password_hash: string | null
+  user_id: string | null
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
+type TabRow = {
+  id: string
+  note_id: string
+  name: string
+  order_index: number
+  created_at: string
+}
+
+type BlockRow = {
+  id: string
+  tab_id: string
+  type: string
+  title: string | null
+  show_title: boolean
+  content: Record<string, unknown>
+  order_index: number
+  created_at: string
+  updated_at: string
+}
+
+type BlockedIpRow = {
+  id: string
+  ip: string
+  reason: string | null
+  created_at: string
+}
+
+type Database = {
+  public: {
+    Tables: {
+      notes: {
+        Row: NoteRow
+        Insert: Omit<NoteRow, 'id' | 'created_at' | 'updated_at'> & { id?: string; created_at?: string; updated_at?: string }
+        Update: Partial<Omit<NoteRow, 'id' | 'created_at'>>
+      }
+      tabs: {
+        Row: TabRow
+        Insert: Omit<TabRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
+        Update: Partial<Omit<TabRow, 'id' | 'created_at'>>
+      }
+      blocks: {
+        Row: BlockRow
+        Insert: Omit<BlockRow, 'id' | 'created_at' | 'updated_at'> & { id?: string; created_at?: string; updated_at?: string }
+        Update: Partial<Omit<BlockRow, 'id' | 'created_at'>>
+      }
+      blocked_ips: {
+        Row: BlockedIpRow
+        Insert: Omit<BlockedIpRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
+        Update: Partial<Omit<BlockedIpRow, 'id' | 'created_at'>>
+      }
+    }
+    Views: Record<string, never>
+    Functions: Record<string, never>
+    Enums: Record<string, never>
+  }
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -39,11 +110,11 @@ const authStorageAdapter = {
 // HMR 시 모듈 재평가로 인한 다중 인스턴스 생성 방지 (AbortError: Lock broken 방지)
 // globalThis 대신 모듈 수준 변수 사용 — Edge 호환성 문제 없음
 // eslint-disable-next-line prefer-const
-let _client: ReturnType<typeof createClient> | null = null
+let _client: ReturnType<typeof createClient<Database>> | null = null
 
 export const supabase = (() => {
   if (_client) return _client
-  _client = createClient(supabaseUrl, supabaseAnonKey, {
+  _client = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
       storage: authStorageAdapter,
       persistSession: true,
