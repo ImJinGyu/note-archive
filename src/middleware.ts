@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
           `<!DOCTYPE html><html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f0f9ff">
            <div style="text-align:center"><h1 style="color:#0369a1">403</h1><p style="color:#0284c7">접근이 차단된 IP입니다.</p></div>
            </body></html>`,
-          { status: 403, headers: { 'Content-Type': 'text/html' } }
+          { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
         )
       }
     }
