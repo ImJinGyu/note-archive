@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { ToastProvider } from '@/components/ui/Toast'
+import OfflineBanner from '@/components/OfflineBanner'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export const metadata: Metadata = {
   title: 'Note Archive',
@@ -14,6 +17,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0ea5e9" />
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             try {
@@ -22,19 +27,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               };
               var bgId = localStorage.getItem('note-archive-bg') || 'bg1';
               var bgUrl = BG_MAP[bgId] || '/bg1.jpg';
-              document.body.style.backgroundImage = "url('" + bgUrl + "')";
-              document.body.style.backgroundSize = 'cover';
-              document.body.style.backgroundPosition = 'center center';
-              document.body.style.backgroundRepeat = 'no-repeat';
-              document.body.style.backgroundAttachment = 'scroll';
+              var theme = localStorage.getItem('note-archive-theme');
+              if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+              } else {
+                document.body.style.backgroundImage = "url('" + bgUrl + "')";
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center center';
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundAttachment = 'scroll';
+              }
             } catch(e) {}
           })();
         `}} />
       </head>
       <body>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <OfflineBanner />
+            {children}
+            <ThemeToggle />
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

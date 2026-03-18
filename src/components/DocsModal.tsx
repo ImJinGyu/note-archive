@@ -187,7 +187,7 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
         style={{
           maxWidth: '960px',
           maxHeight: '88vh',
-          background: 'rgba(255,255,255,0.94)',
+          background: 'var(--dm-surface-modal)',
           backdropFilter: 'blur(24px)',
           border: '1px solid rgba(255,255,255,0.9)',
         }}
@@ -196,7 +196,7 @@ export default function DocsModal({ isOpen, onClose }: DocsModalProps) {
         {/* ── Sidebar ── */}
         <div
           className="w-56 flex-shrink-0 flex flex-col border-r border-sky-300/50"
-          style={{ background: 'rgba(240,249,255,0.7)' }}
+          style={{ background: 'var(--dm-surface-card)' }}
         >
           {/* Sidebar header */}
           <div className="px-4 py-4 border-b border-sky-300/50">

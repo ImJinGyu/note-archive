@@ -43,7 +43,7 @@ export default function InlineEmojiPicker({ value, onChange }: Props) {
       {open && (
         <div
           className="absolute left-0 top-10 z-[200] rounded-xl shadow-2xl p-2 grid grid-cols-7 gap-0.5"
-          style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', border: '1px solid rgba(14,165,233,0.2)', width: '210px' }}
+          style={{ background: 'var(--dm-surface-modal)', backdropFilter: 'blur(12px)', border: '1px solid var(--dm-border)', width: '210px' }}
         >
           {EMOJIS.map((emoji) => (
             <button

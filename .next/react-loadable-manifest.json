@@ -1882,5 +1882,13 @@
   "..\\node_modules\\react-syntax-highlighter\\dist\\esm\\prism-async.js -> refractor": {
     "id": "..\\node_modules\\react-syntax-highlighter\\dist\\esm\\prism-async.js -> refractor",
     "files": []
+  },
+  "app\\notes\\[id]\\page.tsx -> @/lib/lockSession": {
+    "id": "app\\notes\\[id]\\page.tsx -> @/lib/lockSession",
+    "files": []
+  },
+  "app\\notes\\[id]\\page.tsx -> bcryptjs": {
+    "id": "app\\notes\\[id]\\page.tsx -> bcryptjs",
+    "files": []
   }
 }

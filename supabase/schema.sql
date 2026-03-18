@@ -121,7 +121,36 @@ ALTER TABLE documents ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT
 -- Add new block types to existing check constraint
 ALTER TABLE blocks DROP CONSTRAINT IF EXISTS blocks_type_check;
 ALTER TABLE blocks ADD CONSTRAINT blocks_type_check
-  CHECK (type IN ('text', 'code', 'tip', 'steps', 'table', 'checklist', 'file', 'keyword', 'flow', 'featurelist', 'keyvalue', 'list'));
+  CHECK (type IN ('text','code','tip','steps','table','checklist','file','keyword','flow','featurelist','keyvalue','list','credential','license','link','poll','mindmap','embed','image','math','timer','ai_summary'));
+
+-- note_history table (변경 사유 기록)
+CREATE TABLE IF NOT EXISTS note_history (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  note_id UUID REFERENCES notes(id) ON DELETE CASCADE,
+  message TEXT NOT NULL,
+  changed_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE note_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "Users manage own history" ON note_history
+  FOR ALL USING (
+    note_id IN (SELECT id FROM notes WHERE user_id = auth.uid())
+  );
+
+-- note_comments table (노트 댓글)
+CREATE TABLE IF NOT EXISTS note_comments (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  note_id UUID REFERENCES notes(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE note_comments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "Users manage own comments" ON note_comments
+  FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY IF NOT EXISTS "Note owner can view comments" ON note_comments
+  FOR SELECT TO authenticated USING (
+    note_id IN (SELECT id FROM notes WHERE user_id = auth.uid())
+  );
 
 -- Add deleted_at for trash (soft delete)
 ALTER TABLE notes ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;

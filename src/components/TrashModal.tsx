@@ -90,7 +90,7 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div
         className="w-full max-w-2xl rounded-3xl shadow-2xl animate-slide-up overflow-hidden"
-        style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.9)', maxHeight: '85vh' }}
+        style={{ background: 'var(--dm-surface-modal)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.9)', maxHeight: '85vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -110,7 +110,7 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
             {trashedNotes.length > 0 && (
               <button
                 onClick={handleEmptyTrash}
-                className="px-3 py-1.5 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-all"
+                className="px-3 py-1.5 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all"
               >
                 휴지통 비우기
               </button>
@@ -189,7 +189,7 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
                     <button
                       onClick={() => setPermanentDeleteTarget(note)}
                       disabled={processing === note.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-all disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all disabled:opacity-50"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -209,7 +209,7 @@ export default function TrashModal({ isOpen, onClose, onRestore }: TrashModalPro
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setPermanentDeleteTarget(null)}>
           <div
             className="w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-slide-up"
-            style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.9)' }}
+            style={{ background: 'var(--dm-surface-card)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.9)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center mb-5">

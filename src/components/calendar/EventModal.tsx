@@ -249,7 +249,7 @@ export default function EventModal({ event, defaultDate, userId, onClose, onSave
             <button
               onClick={() => setConfirmDelete(true)}
               disabled={deleting}
-              className="px-3 py-2 text-sm font-medium rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 transition-all disabled:opacity-50"
+              className="px-4 py-2 text-sm font-semibold rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition-all disabled:opacity-50 shadow-sm"
             >
               {deleting ? '삭제 중...' : '삭제'}
             </button>

@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/notes/[id]/page": [
+    "/calendar/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/notes/[id]/page.js"
+      "static/chunks/app/calendar/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -16,15 +16,26 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
-    "/notes/[id]/edit/page": [
+    "/notes/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/notes/[id]/edit/page.js"
+      "static/css/app/notes/[id]/page.css",
+      "static/chunks/app/notes/[id]/page.js"
     ],
     "/notes/new/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/notes/new/page.js"
+    ],
+    "/reset-password/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/reset-password/page.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

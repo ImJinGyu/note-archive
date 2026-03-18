@@ -35,7 +35,7 @@ export default function TagInput({ tags, onChange }: TagInputProps) {
   }
 
   return (
-    <div className="min-h-[44px] flex flex-wrap gap-2 items-center bg-white/75 border border-sky-300/60 rounded-lg px-3 py-2 focus-within:border-sky-500 focus-within:shadow-[0_0_0_3px_rgba(14,165,233,0.1)] transition-all">
+    <div className="min-h-[44px] flex flex-wrap gap-2 items-center border border-sky-300/60 rounded-lg px-3 py-2 focus-within:border-sky-500 focus-within:shadow-[0_0_0_3px_rgba(14,165,233,0.1)] transition-all" style={{ background: 'var(--dm-surface-input)' }}>
       {tags.map((tag, i) => (
         <span
           key={i}

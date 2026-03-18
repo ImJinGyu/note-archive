@@ -14,6 +14,14 @@ import TrashModal from '@/components/TrashModal'
 import DocsModal from '@/components/DocsModal'
 import AccountModal from '@/components/AccountModal'
 import bcrypt from 'bcryptjs'
+import ContributionGraph from '@/components/ContributionGraph'
+import BlockStatsChart from '@/components/BlockStatsChart'
+import WeeklyGoal from '@/components/WeeklyGoal'
+import { getPinnedIds, togglePin } from '@/lib/pinnedNotes'
+import { getRecentNotes, addRecentNote, RecentNote } from '@/lib/recentNotes'
+import FolderModal from '@/components/FolderModal'
+import { getFolders, Folder } from '@/lib/folders'
+import SearchModal from '@/components/SearchModal'
 
 export default function HomePage() {
   const router = useRouter()
@@ -28,6 +36,20 @@ export default function HomePage() {
   const [showTrash, setShowTrash] = useState(false)
   const [showDocs, setShowDocs] = useState(false)
   const [showAccount, setShowAccount] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [duplicateTarget, setDuplicateTarget] = useState<Note | null>(null)
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+
+  // 폴더
+  const [folders, setFolders] = useState<Folder[]>([])
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
+  const [showFolderModal, setShowFolderModal] = useState(false)
+
+  // 핀 고정
+  const [pinnedIds, setPinnedIds] = useState<string[]>([])
+
+  // 최근 본 노트
+  const [recentNotes, setRecentNotes] = useState<RecentNote[]>([])
 
   // Drag-and-drop order
   const [noteOrder, setNoteOrder] = useState<string[]>([])
@@ -40,6 +62,8 @@ export default function HomePage() {
   const [authLoading, setAuthLoading] = useState(true)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authTab, setAuthTab] = useState<'login' | 'signup'>('login')
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const profileMenuRef = useRef<HTMLDivElement>(null)
 
   // MFA AAL 체크: nextLevel이 aal2인데 currentLevel이 aal1이면 MFA 미완료 → user 설정 안 함
   const checkAalAndSetUser = async (sessionUser: typeof user) => {
@@ -79,6 +103,77 @@ export default function HomePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // localStorage에서 핀 로드
+  useEffect(() => {
+    setPinnedIds(getPinnedIds())
+  }, [])
+
+  // 최근 본 노트 로드
+  useEffect(() => {
+    setRecentNotes(getRecentNotes())
+  }, [notes])
+
+  // 폴더 로드
+  useEffect(() => {
+    setFolders(getFolders())
+  }, [])
+
+  const handleTogglePin = (note: Note) => {
+    togglePin(note.id)
+    setPinnedIds(getPinnedIds())
+  }
+
+  const handleDuplicateNote = async (note: Note) => {
+    const { data: newNote, error } = await supabase
+      .from('notes')
+      .insert({
+        icon: note.icon,
+        title: `${note.title} (복사)`,
+        description: note.description,
+        tags: note.tags,
+        is_locked: false,
+        user_id: user?.id,
+      })
+      .select()
+      .single()
+
+    if (error || !newNote) {
+      showToast('복제 실패: ' + (error?.message || ''), 'error')
+      return
+    }
+
+    const { data: sourceTabs } = await supabase.from('tabs').select('*').eq('note_id', note.id).order('order_index')
+    if (sourceTabs && sourceTabs.length > 0) {
+      for (const tab of sourceTabs) {
+        const { data: newTab } = await supabase
+          .from('tabs')
+          .insert({ note_id: newNote.id, name: tab.name, order_index: tab.order_index })
+          .select()
+          .single()
+
+        if (!newTab) continue
+
+        const { data: blocks } = await supabase.from('blocks').select('*').eq('tab_id', tab.id).order('order_index')
+        if (blocks && blocks.length > 0) {
+          await supabase.from('blocks').insert(
+            blocks.map(b => ({
+              tab_id: newTab.id,
+              type: b.type,
+              title: b.title,
+              show_title: b.show_title,
+              content: b.content,
+              order_index: b.order_index,
+            }))
+          )
+        }
+      }
+    }
+
+    showToast(`"${note.title}" 노트가 복제되었습니다.`, 'success')
+    await fetchNotes()
+    router.push(`/notes/${newNote.id}`)
+  }
+
   const fetchNotes = useCallback(async () => {
     setLoading(true)
     // deleted_at 컬럼이 있으면 휴지통 필터, 없으면 전체 조회
@@ -105,6 +200,18 @@ export default function HomePage() {
     fetchNotes()
   }, [fetchNotes])
 
+  // Ctrl+K 전역 단축키
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setShowSearch(true)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   const filteredNotes = notes.filter((note) => {
     const matchesTab = activeTab === 'all' || (activeTab === 'locked' && note.is_locked)
     const matchesSearch =
@@ -112,13 +219,18 @@ export default function HomePage() {
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       note.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       note.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-    return matchesTab && matchesSearch
+    const matchesTag = !selectedTag || (note.tags?.includes(selectedTag) ?? false)
+    const matchesFolder = !selectedFolderId || (
+      folders.find(f => f.id === selectedFolderId)?.noteIds.includes(note.id) ?? false
+    )
+    return matchesTab && matchesSearch && matchesTag && matchesFolder
   })
 
   const handleNoteClick = (note: Note) => {
     if (note.is_locked) {
       setPasswordModal({ note })
     } else {
+      addRecentNote({ id: note.id, title: note.title, icon: note.icon, visitedAt: new Date().toISOString() })
       router.push(`/notes/${note.id}`)
     }
   }
@@ -227,9 +339,23 @@ export default function HomePage() {
 
   const lockedCount = notes.filter((n) => n.is_locked).length
 
+  // 전체 태그 통계 (태그 필터용)
+  const allTagStats = useMemo(() => {
+    const freq: Record<string, number> = {}
+    notes.forEach(n => n.tags?.forEach(t => { freq[t] = (freq[t] || 0) + 1 }))
+    return Object.entries(freq).sort((a, b) => b[1] - a[1])
+  }, [notes])
+
+  // 핀된 노트 (filteredNotes 중)
+  const pinnedNotes = useMemo(
+    () => filteredNotes.filter((n) => pinnedIds.includes(n.id)).slice(0, 5),
+    [filteredNotes, pinnedIds]
+  )
+
   const orderedNotes = useMemo(() => {
-    if (!noteOrder.length) return filteredNotes
-    return [...filteredNotes].sort((a, b) => {
+    const unpinned = filteredNotes.filter((n) => !pinnedIds.includes(n.id))
+    if (!noteOrder.length) return unpinned
+    return [...unpinned].sort((a, b) => {
       const ai = noteOrder.indexOf(a.id)
       const bi = noteOrder.indexOf(b.id)
       if (ai === -1 && bi === -1) return 0
@@ -237,7 +363,7 @@ export default function HomePage() {
       if (bi === -1) return -1
       return ai - bi
     })
-  }, [filteredNotes, noteOrder])
+  }, [filteredNotes, noteOrder, pinnedIds])
 
   const isLanding = !authLoading && !user
 
@@ -308,7 +434,7 @@ export default function HomePage() {
       {/* ── 로그인된 대시보드 ── */}
       {!isLanding && user && (<>
       {/* Header */}
-      <header className="glass-header sticky top-0 z-30">
+      <header className="glass-header fixed top-0 left-0 right-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-base shadow-md">
@@ -317,6 +443,15 @@ export default function HomePage() {
             <h1 className="text-xl font-bold text-sky-900 drop-shadow">Note Archive</h1>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowSearch(true)}
+              title="전체 검색 (Ctrl+K)"
+              className="p-2 rounded-xl bg-white/30 hover:bg-white/50 border border-white/40 text-sky-700 hover:text-sky-800 transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
             <button
               onClick={() => setShowAccount(true)}
               title="계정 설정"
@@ -354,12 +489,14 @@ export default function HomePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </Link>
-            <span className="text-sm text-sky-800 hidden sm:inline">{user?.email}</span>
             <button
-              onClick={() => supabase.auth.signOut()}
-              className="px-4 py-1.5 text-sm font-medium rounded-xl bg-white/50 hover:bg-white/70 border border-white/40 text-sky-700 hover:text-red-600 transition-all"
+              onClick={() => setShowFolderModal(true)}
+              title="폴더 관리"
+              className="p-2 rounded-xl bg-white/30 hover:bg-white/50 border border-white/40 text-sky-700 hover:text-sky-800 transition-all"
             >
-              로그아웃
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+              </svg>
             </button>
             <Link
               href="/notes/new"
@@ -370,14 +507,46 @@ export default function HomePage() {
               </svg>
               새 노트
             </Link>
+            {user && (
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  title="프로필"
+                  className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all border-2 border-white/60"
+                >
+                  {user.email?.[0]?.toUpperCase() ?? '?'}
+                </button>
+                {showProfileMenu && (
+                  <div
+                    className="absolute right-0 top-10 z-50 w-52 rounded-2xl shadow-xl border border-sky-200/60 overflow-hidden"
+                    style={{ background: 'var(--dm-surface-modal)', backdropFilter: 'blur(16px)' }}
+                    onMouseLeave={() => setShowProfileMenu(false)}
+                  >
+                    <div className="px-4 py-3 border-b border-sky-100">
+                      <p className="text-xs text-sky-500 font-medium">로그인 계정</p>
+                      <p className="text-sm text-sky-900 font-semibold truncate">{user.email}</p>
+                    </div>
+                    <button
+                      onClick={() => { setShowProfileMenu(false); supabase.auth.signOut() }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      로그아웃
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 relative">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 relative pt-24">
 
         {/* Dashboard top panel */}
-        <div className="rounded-2xl mb-8 overflow-hidden" style={{ background: 'rgba(210,235,255,0.92)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56,170,230,0.30)', boxShadow: '0 4px 32px rgba(0,80,160,0.14)' }}>
+        <div className="rounded-2xl mb-8 overflow-hidden" style={{ background: 'var(--dm-surface-panel)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56,170,230,0.30)', boxShadow: '0 4px 32px rgba(0,80,160,0.14)' }}>
           {/* Hero row */}
           <div className="px-6 pt-6 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -485,8 +654,168 @@ export default function HomePage() {
                 }`}>{lockedCount}</span>
               </button>
             </div>
+
           </div>
+
+          {/* 주간 목표 */}
+          <div className="px-6 pb-4 border-t border-sky-100/60 pt-4">
+            <WeeklyGoal notes={notes} />
+          </div>
+
+          {/* 전체 태그 필터 */}
+          {allTagStats.length > 0 && (
+            <div className="px-6 py-3 border-t border-sky-100/60">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                <p className="text-xs font-semibold text-sky-700">태그로 필터</p>
+                {selectedTag && (
+                  <button
+                    onClick={() => setSelectedTag(null)}
+                    className="ml-1 text-xs text-sky-500 hover:text-sky-700 underline transition-colors"
+                  >
+                    전체 보기
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {allTagStats.map(([tag, cnt]) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                    className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-all"
+                    style={selectedTag === tag
+                      ? { background: 'rgba(14,165,233,0.2)', border: '1px solid rgba(14,165,233,0.5)', color: 'var(--dm-text)', fontWeight: 700 }
+                      : { background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)', color: 'var(--dm-text-muted)' }
+                    }
+                  >
+                    <span>#{tag}</span>
+                    <span
+                      className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                      style={selectedTag === tag
+                        ? { background: 'rgba(14,165,233,0.25)', color: 'var(--dm-text)' }
+                        : { background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }
+                      }
+                    >{cnt}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 폴더 필터 */}
+          {folders.length > 0 && (
+            <div className="px-6 py-3 border-t border-sky-100/60">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                </svg>
+                <p className="text-xs font-semibold text-sky-700">폴더로 필터</p>
+                {selectedFolderId && (
+                  <button
+                    onClick={() => setSelectedFolderId(null)}
+                    className="ml-1 text-xs text-sky-500 hover:text-sky-700 underline transition-colors"
+                  >
+                    전체 보기
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {folders.map((folder) => (
+                  <button
+                    key={folder.id}
+                    onClick={() => setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id)}
+                    className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-all"
+                    style={selectedFolderId === folder.id
+                      ? { background: 'rgba(14,165,233,0.2)', border: '1px solid rgba(14,165,233,0.5)', color: 'var(--dm-text)', fontWeight: 700 }
+                      : { background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)', color: 'var(--dm-text-muted)' }
+                    }
+                  >
+                    <span>{folder.icon}</span>
+                    <span>{folder.name}</span>
+                    <span
+                      className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                      style={selectedFolderId === folder.id
+                        ? { background: 'rgba(14,165,233,0.25)', color: 'var(--dm-text)' }
+                        : { background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }
+                      }
+                    >{folder.noteIds.length}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* 최근 본 노트 */}
+        {!loading && recentNotes.length > 0 && (
+          <div className="mb-6">
+            <p className="text-xs font-semibold text-sky-700 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+              <span className="text-sm">🕐</span>
+              최근 본 노트
+            </p>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+              {recentNotes.slice(0, 8).map((rn) => {
+                const note = notes.find(n => n.id === rn.id)
+                if (!note) return null
+                return (
+                  <button
+                    key={rn.id}
+                    onClick={() => handleNoteClick(note)}
+                    className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl transition-all hover:scale-105"
+                    style={{ background: 'var(--dm-surface-input)', border: '1px solid var(--dm-border-subtle)', backdropFilter: 'blur(8px)' }}
+                  >
+                    <span className="text-lg">{rn.icon}</span>
+                    <span className="text-sm font-medium text-sky-900 max-w-[120px] truncate">{rn.title}</span>
+                  </button>
+                )
+              }).filter(Boolean)}
+            </div>
+          </div>
+        )}
+
+        {/* 핀 고정된 노트 섹션 */}
+        {!loading && pinnedNotes.length > 0 && (
+          <div className="mb-6">
+            <p className="text-xs font-semibold text-sky-700 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+              <span className="text-sm">📌</span>
+              고정됨
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pinnedNotes.map((note) => (
+                <div key={note.id} className="group">
+                  {/* 상단 액션 바 */}
+                  <div className="flex items-center justify-between px-3 py-1.5 mx-1 mt-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'rgba(186,230,253,0.55)', border: '1px solid rgba(125,200,240,0.4)' }}>
+                    <span className="text-xs font-medium text-sky-600 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                      </svg>
+                      고정됨
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleTogglePin(note) }}
+                      title="핀 해제"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/60 hover:bg-red-50 text-sky-600 hover:text-red-400 transition-all text-xs font-medium"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div style={{ outline: '2px solid rgba(14,165,233,0.35)', borderRadius: '0.75rem' }}>
+                    <NoteCard
+                      note={note}
+                      onClick={() => handleNoteClick(note)}
+                      onEdit={() => router.push(`/notes/${note.id}/edit`)}
+                      onDelete={() => handleDeleteRequest(note)}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Notes grid */}
         {loading ? (
@@ -542,34 +871,58 @@ export default function HomePage() {
                 key={note.id}
                 onDragOver={(e) => handleDragOver(e, note.id)}
                 onDrop={(e) => handleDrop(e, note.id)}
-                className={`relative group transition-all duration-150 ${
+                className={`group transition-all duration-150 ${
                   dragOverId === note.id && draggedId !== note.id
                     ? 'ring-2 ring-sky-400 ring-offset-2 rounded-xl scale-[1.02]'
                     : ''
                 }`}
               >
-                {/* 드래그 핸들 — 호버 시 표시, 이것만 draggable */}
-                <div
-                  draggable
-                  onDragStart={(e) => {
-                    handleDragStart(e, note.id)
-                    const card = (e.currentTarget as HTMLElement).parentElement
-                    if (card) e.dataTransfer.setDragImage(card, 24, 24)
-                  }}
-                  onDragEnd={handleDragEnd}
-                  onClick={(e) => e.stopPropagation()}
-                  title="드래그하여 순서 변경"
-                  className="absolute top-2.5 left-2.5 z-20 w-6 h-6 flex items-center justify-center rounded-md cursor-grab active:cursor-grabbing transition-opacity opacity-20 group-hover:opacity-100"
-                  style={{ background: 'rgba(255,255,255,0.85)', boxShadow: '0 1px 4px rgba(0,80,160,0.15)' }}
-                >
-                  <svg className="w-3 h-3 text-sky-700" fill="currentColor" viewBox="0 0 24 24">
-                    <circle cx="9"  cy="5"  r="1.5"/>
-                    <circle cx="15" cy="5"  r="1.5"/>
-                    <circle cx="9"  cy="12" r="1.5"/>
-                    <circle cx="15" cy="12" r="1.5"/>
-                    <circle cx="9"  cy="19" r="1.5"/>
-                    <circle cx="15" cy="19" r="1.5"/>
-                  </svg>
+                {/* 카드 상단 액션 바 — 호버 시 표시 */}
+                <div className="flex items-center justify-between px-3 py-1.5 mx-1 mt-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'rgba(186,230,253,0.55)', border: '1px solid rgba(125,200,240,0.4)' }}>
+                  <div className="flex items-center gap-2">
+                    {/* 드래그 핸들 */}
+                    <div
+                      draggable
+                      onDragStart={(e) => {
+                        handleDragStart(e, note.id)
+                        const card = (e.currentTarget as HTMLElement).closest('.group') as HTMLElement
+                        if (card) e.dataTransfer.setDragImage(card, 24, 24)
+                      }}
+                      onDragEnd={handleDragEnd}
+                      onClick={(e) => e.stopPropagation()}
+                      title="드래그하여 순서 변경"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg cursor-grab active:cursor-grabbing bg-white/60 hover:bg-white/90 text-sky-600 hover:text-sky-800 transition-all"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <circle cx="9"  cy="5"  r="1.5"/>
+                        <circle cx="15" cy="5"  r="1.5"/>
+                        <circle cx="9"  cy="12" r="1.5"/>
+                        <circle cx="15" cy="12" r="1.5"/>
+                        <circle cx="9"  cy="19" r="1.5"/>
+                        <circle cx="15" cy="19" r="1.5"/>
+                      </svg>
+                    </div>
+                    {/* 복제 버튼 */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDuplicateTarget(note) }}
+                      title="노트 복제"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/60 hover:bg-white/90 text-sky-600 hover:text-sky-800 transition-all"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
+                  {/* 핀 토글 */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleTogglePin(note) }}
+                    title="핀 고정"
+                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/60 hover:bg-white/90 text-sky-600 hover:text-sky-800 transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  </button>
                 </div>
 
                 <div className={`transition-all duration-150 ${draggedId === note.id ? 'opacity-40 scale-95' : ''}`}>
@@ -584,6 +937,17 @@ export default function HomePage() {
             ))}
           </div>
         )}
+
+        {/* 글쓰기 잔디 */}
+        <div className="mt-8">
+          <ContributionGraph notes={notes} />
+        </div>
+
+        {/* 블록 타입 통계 */}
+        <div className="mt-6 mb-8">
+          <BlockStatsChart userId={user.id} />
+        </div>
+
       </main>
 
       {/* Password Modal */}
@@ -606,6 +970,18 @@ export default function HomePage() {
           onClose={() => setDeletePasswordNote(null)}
         />
       )}
+
+      {/* Duplicate Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={!!duplicateTarget}
+        title="노트 복제"
+        message={`"${duplicateTarget?.title}" 노트를 복제하시겠습니까? 탭과 블록이 모두 복사됩니다.`}
+        confirmLabel="복제"
+        cancelLabel="취소"
+        variant="info"
+        onConfirm={() => { const n = duplicateTarget; setDuplicateTarget(null); if (n) handleDuplicateNote(n) }}
+        onCancel={() => setDuplicateTarget(null)}
+      />
 
       {/* Delete Confirm Dialog */}
       <ConfirmDialog
@@ -641,6 +1017,17 @@ export default function HomePage() {
           onSignOut={() => { setShowAccount(false); fetchNotes() }}
         />
       )}
+
+      {/* Search Modal */}
+      {showSearch && <SearchModal onClose={() => setShowSearch(false)} />}
+
+      {/* Folder Modal */}
+      <FolderModal
+        isOpen={showFolderModal}
+        notes={notes}
+        onClose={() => setShowFolderModal(false)}
+        onFoldersChange={() => setFolders(getFolders())}
+      />
       </>)}
 
       {/* ── AuthModal: 항상 동일한 트리 위치 (랜딩/대시보드 전환 시 리마운트 방지) ── */}

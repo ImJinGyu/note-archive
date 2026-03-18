@@ -47,7 +47,7 @@ export default function KeywordBlock({ content, isEditing, onChange }: KeywordBl
                 placeholder="키워드 제목"
                 className="flex-1 min-w-[80px] bg-white border border-sky-200 rounded px-2 py-1 text-sm text-sky-900 font-semibold outline-none focus:border-sky-400"
               />
-              <span className="text-sky-700">—</span>
+              <span className="text-sky-300">·</span>
               <input
                 value={item.subtitle}
                 onChange={(e) => updateItem(index, 'subtitle', e.target.value)}
@@ -93,7 +93,7 @@ export default function KeywordBlock({ content, isEditing, onChange }: KeywordBl
             </span>
             <span className="text-lg flex-shrink-0">{item.icon}</span>
             <span className="text-sky-950 font-bold text-base">{item.title}</span>
-            <span className="text-sky-700 font-light">—</span>
+            <span className="text-sky-300 font-light">·</span>
             <span className="text-sky-800 text-sm">{item.subtitle}</span>
           </div>
           {item.example && (

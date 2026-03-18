@@ -75,7 +75,33 @@ export type Tab = {
   created_at: string
 }
 
-export type BlockType = 'text' | 'code' | 'tip' | 'steps' | 'table' | 'checklist' | 'file' | 'keyword' | 'flow' | 'featurelist' | 'keyvalue' | 'list' | 'credential' | 'license'
+export type BlockType = 'text' | 'code' | 'tip' | 'steps' | 'table' | 'checklist' | 'file' | 'keyword' | 'flow' | 'featurelist' | 'keyvalue' | 'list' | 'credential' | 'license' | 'link' | 'poll' | 'mindmap' | 'embed' | 'image' | 'math' | 'timer' | 'ai_summary'
+
+// Image block content
+export type ImageContent = {
+  dataUrl: string
+  caption: string
+  alt: string
+}
+
+// Math block content
+export type MathContent = {
+  latex: string
+  displayMode: boolean
+}
+
+// Timer block content
+export type TimerContent = {
+  focusMinutes: number
+  breakMinutes: number
+  label: string
+}
+
+// NOTE: Supabase DB constraint must be updated to include new types.
+// Run the following SQL in Supabase SQL editor:
+// ALTER TABLE blocks DROP CONSTRAINT IF EXISTS blocks_type_check;
+// ALTER TABLE blocks ADD CONSTRAINT blocks_type_check
+//   CHECK (type IN ('text','code','tip','steps','table','checklist','file','keyword','flow','featurelist','keyvalue','list','credential','license','link','poll','mindmap','embed','image','math','timer'));
 
 export type Block = {
   id: string
@@ -128,6 +154,7 @@ export type ChecklistItem = {
   text: string
   checked: boolean
   sub?: string
+  due_date?: string  // 'YYYY-MM-DD'
 }
 export type ChecklistContent = {
   items: ChecklistItem[]

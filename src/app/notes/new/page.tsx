@@ -9,6 +9,7 @@ import TagInput from '@/components/TagInput'
 import { useToast } from '@/components/ui/Toast'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import bcrypt from 'bcryptjs'
+import NoteTemplateModal, { NoteTemplate } from '@/components/NoteTemplateModal'
 
 const validatePassword = (pwd: string): string | null => {
   if (!/^\d+$/.test(pwd)) return '숫자만 입력 가능합니다.'
@@ -56,6 +57,8 @@ export default function NewNotePage() {
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<{ title?: string; password?: string }>({})
   const [confirmSave, setConfirmSave] = useState(false)
+  const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<NoteTemplate | null>(null)
 
   const validate = (): boolean => {
     const newErrors: { title?: string; password?: string } = {}
@@ -100,18 +103,39 @@ export default function NewNotePage() {
         .select()
         .single()
 
-      if (noteError) throw noteError
+      if (noteError || !note) throw noteError ?? new Error('노트 생성 실패')
 
-      // Create default tab
-      const { error: tabError } = await supabase
+      const noteId = (note as unknown as { id: string }).id
+
+      // Create tabs (from template or default)
+      const tabsToCreate = selectedTemplate?.tabs?.length
+        ? selectedTemplate.tabs.map((t, i) => ({ note_id: noteId, name: t.name, order_index: i }))
+        : [{ note_id: noteId, name: '메인', order_index: 0 }]
+
+      const { data: createdTabs, error: tabError } = await (supabase as any)
         .from('tabs')
-        .insert({
-          note_id: note.id,
-          name: '메인',
-          order_index: 0,
-        })
+        .insert(tabsToCreate)
+        .select()
 
       if (tabError) throw tabError
+
+      // Create blocks from template
+      if (selectedTemplate?.tabs?.length && createdTabs) {
+        for (let i = 0; i < selectedTemplate.tabs.length; i++) {
+          const templateTab = selectedTemplate.tabs[i]
+          const dbTab = (createdTabs as any[])[i]
+          if (!dbTab || !templateTab.blocks.length) continue
+          const blocksToInsert = templateTab.blocks.map((b, j) => ({
+            tab_id: dbTab.id,
+            type: b.type,
+            title: b.title,
+            show_title: b.show_title,
+            content: b.content,
+            order_index: j,
+          }))
+          await (supabase as any).from('blocks').insert(blocksToInsert)
+        }
+      }
 
       router.refresh()
       router.push('/')
@@ -145,6 +169,30 @@ export default function NewNotePage() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <div className="glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
+          {/* Template */}
+          <div>
+            <label className="block text-sm font-medium text-sky-700 mb-2">템플릿</label>
+            <button
+              type="button"
+              onClick={() => setShowTemplateModal(true)}
+              className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white/60 border border-sky-300/60 text-sky-800 hover:bg-sky-50 hover:border-sky-400 transition-all text-sm font-medium"
+            >
+              <svg className="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+              </svg>
+              {selectedTemplate ? `템플릿: ${selectedTemplate.name}` : '템플릿 선택 (선택사항)'}
+            </button>
+            {selectedTemplate && (
+              <button
+                type="button"
+                onClick={() => setSelectedTemplate(null)}
+                className="mt-1.5 text-xs text-sky-500 hover:text-red-400 transition-colors"
+              >
+                템플릿 해제
+              </button>
+            )}
+          </div>
+
           {/* Emoji picker */}
           <div>
             <label className="block text-sm font-medium text-sky-700 mb-3">아이콘 선택</label>
@@ -341,6 +389,13 @@ export default function NewNotePage() {
         onConfirm={() => { setConfirmSave(false); handleSave() }}
         onCancel={() => setConfirmSave(false)}
       />
+
+      {showTemplateModal && (
+        <NoteTemplateModal
+          onSelect={(t) => { setSelectedTemplate(t); setShowTemplateModal(false) }}
+          onClose={() => setShowTemplateModal(false)}
+        />
+      )}
     </div>
   )
 }

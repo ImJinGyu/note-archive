@@ -43,11 +43,11 @@ export default function LicenseBlock({ content, isEditing, onChange }: Props) {
       return <p className="text-sky-700 text-sm italic py-4 text-center">자격/면허 정보가 없습니다. 편집 모드에서 추가해주세요.</p>
     }
     return (
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(186,230,253,0.7)', background: 'rgba(240,249,255,0.5)' }}>
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--dm-border)', background: 'var(--dm-surface-item)' }}>
         {/* 헤더 행 */}
         <div
           className="grid text-xs font-bold text-sky-800 px-4 py-2"
-          style={{ gridTemplateColumns: '2fr 1fr 1fr 1.5fr', background: 'rgba(186,230,253,0.6)', borderBottom: '1px solid rgba(147,210,255,0.4)' }}
+          style={{ gridTemplateColumns: '2fr 1fr 1fr 1.5fr', background: 'var(--dm-border)', borderBottom: '1px solid var(--dm-border-subtle)' }}
         >
           <span>자격/면허사항</span>
           <span>취득일</span>
@@ -60,7 +60,7 @@ export default function LicenseBlock({ content, isEditing, onChange }: Props) {
             className="grid px-4 py-3 hover:bg-sky-50/40 transition-colors"
             style={{
               gridTemplateColumns: '2fr 1fr 1fr 1.5fr',
-              borderBottom: idx < items.length - 1 ? '1px solid rgba(186,230,253,0.6)' : undefined,
+              borderBottom: idx < items.length - 1 ? '1px solid var(--dm-border)' : undefined,
             }}
           >
             <span className="text-sm font-semibold text-sky-900 truncate pr-2">{item.name || <span className="text-sky-300 italic font-normal">미입력</span>}</span>
@@ -76,11 +76,11 @@ export default function LicenseBlock({ content, isEditing, onChange }: Props) {
   /* ── EDIT MODE ── */
   return (
     <div className="space-y-3">
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(186,230,253,0.7)' }}>
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--dm-border)' }}>
         {/* 헤더 */}
         <div
           className="grid text-xs font-bold text-sky-800 px-3 py-2"
-          style={{ gridTemplateColumns: '2fr 1fr 1fr 1.5fr 28px', background: 'rgba(186,230,253,0.6)', borderBottom: '1px solid rgba(147,210,255,0.4)' }}
+          style={{ gridTemplateColumns: '2fr 1fr 1fr 1.5fr 28px', background: 'var(--dm-border)', borderBottom: '1px solid var(--dm-border-subtle)' }}
         >
           <span>자격/면허사항 *</span>
           <span>취득일</span>
@@ -95,8 +95,8 @@ export default function LicenseBlock({ content, isEditing, onChange }: Props) {
             className="grid items-center gap-2 px-3 py-2"
             style={{
               gridTemplateColumns: '2fr 1fr 1fr 1.5fr 28px',
-              borderBottom: idx < items.length - 1 ? '1px solid rgba(186,230,253,0.5)' : undefined,
-              background: 'rgba(240,249,255,0.6)',
+              borderBottom: idx < items.length - 1 ? '1px solid var(--dm-border-subtle)' : undefined,
+              background: 'var(--dm-surface-card)',
             }}
           >
             <input

@@ -248,7 +248,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div
         className="rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(28px)', border: '1px solid rgba(255,255,255,0.6)' }}
+        style={{ background: 'var(--dm-surface-modal)', backdropFilter: 'blur(28px)', border: '1px solid rgba(255,255,255,0.6)' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-sky-300/50">

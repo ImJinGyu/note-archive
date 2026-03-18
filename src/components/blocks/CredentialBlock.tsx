@@ -30,7 +30,7 @@ function CopyBtn({ value }: { value: string }) {
       onClick={copy}
       title="복사"
       className={`flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-all ${
-        copied ? 'bg-emerald-100 text-emerald-600' : 'bg-sky-100/70 hover:bg-sky-200 text-sky-800'
+        copied ? 'bg-emerald-100 text-emerald-600' : 'text-sky-700 hover:bg-sky-200'
       }`}
     >
       {copied ? (
@@ -109,13 +109,13 @@ export default function CredentialBlock({ content, isEditing, onChange }: Props)
           <div
             key={iIdx}
             className="rounded-xl overflow-hidden border border-sky-300/50"
-            style={{ background: 'rgba(240,249,255,0.85)' }}
+            style={{ background: 'var(--dm-surface-card)' }}
           >
             {/* 헤더 */}
             {item.label && (
               <div
                 className="px-4 py-2.5 flex items-center gap-2"
-                style={{ background: 'rgba(186,230,253,0.6)', borderBottom: '1px solid rgba(147,210,255,0.4)' }}
+                style={{ background: 'var(--dm-border)', borderBottom: '1px solid var(--dm-border-subtle)' }}
               >
                 <span className="text-base">🔐</span>
                 <span className="text-sm font-bold text-sky-800 flex-1 truncate">{item.label}</span>
@@ -138,7 +138,7 @@ export default function CredentialBlock({ content, isEditing, onChange }: Props)
                     target="_blank"
                     rel="noopener noreferrer"
                     title="링크 열기"
-                    className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-sky-100/70 hover:bg-sky-200 text-sky-800 transition-all"
+                    className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-sky-700 hover:bg-sky-200 transition-all" style={{ background: 'var(--dm-surface-subtle)' }}
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -187,7 +187,7 @@ export default function CredentialBlock({ content, isEditing, onChange }: Props)
                         <button
                           type="button"
                           onClick={() => togglePw(key)}
-                          className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-sky-100/70 hover:bg-sky-200 text-sky-800 transition-all"
+                          className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-sky-700 hover:bg-sky-200 transition-all" style={{ background: 'var(--dm-surface-subtle)' }}
                           title={showPw[key] ? '숨기기' : '보기'}
                         >
                           {showPw[key] ? (
@@ -230,9 +230,9 @@ export default function CredentialBlock({ content, isEditing, onChange }: Props)
   return (
     <div className="space-y-4">
       {items.map((item, iIdx) => (
-        <div key={iIdx} className="rounded-xl border border-sky-300/50 overflow-hidden" style={{ background: 'rgba(240,249,255,0.7)' }}>
+        <div key={iIdx} className="rounded-xl border border-sky-300/50 overflow-hidden" style={{ background: 'var(--dm-surface-card)' }}>
           {/* 항목 헤더 */}
-          <div className="flex items-center justify-between px-3 py-2" style={{ background: 'rgba(186,230,253,0.5)', borderBottom: '1px solid rgba(147,210,255,0.3)' }}>
+          <div className="flex items-center justify-between px-3 py-2" style={{ background: 'var(--dm-surface-item)', borderBottom: '1px solid var(--dm-border-subtle)' }}>
             <span className="text-xs font-bold text-sky-700">항목 {iIdx + 1}</span>
             {items.length > 1 && (
               <button type="button" onClick={() => removeItem(iIdx)} className="text-sky-700 hover:text-red-400 transition-colors">
@@ -288,7 +288,7 @@ export default function CredentialBlock({ content, isEditing, onChange }: Props)
                   <div
                     key={aIdx}
                     className="rounded-lg border border-sky-200/70 p-2.5 space-y-2"
-                    style={{ background: 'rgba(255,255,255,0.6)' }}
+                    style={{ background: 'var(--dm-surface-subtle)' }}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-semibold text-sky-800">계정 {aIdx + 1}</span>

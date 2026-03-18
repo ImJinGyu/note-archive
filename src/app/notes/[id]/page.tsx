@@ -18,9 +18,22 @@ import KeyValueBlock from '@/components/blocks/KeyValueBlock'
 import ListBlock from '@/components/blocks/ListBlock'
 import CredentialBlock from '@/components/blocks/CredentialBlock'
 import LicenseBlock from '@/components/blocks/LicenseBlock'
+import PollBlock from '@/components/blocks/PollBlock'
+import MindmapBlock from '@/components/blocks/MindmapBlock'
+import EmbedBlock from '@/components/blocks/EmbedBlock'
+import ImageBlock from '@/components/blocks/ImageBlock'
+import MathBlock from '@/components/blocks/MathBlock'
+import TimerBlock from '@/components/blocks/TimerBlock'
+import LinkBlock from '@/components/blocks/LinkBlock'
+import AiSummaryBlock from '@/components/blocks/AiSummaryBlock'
+import SlashCommand from '@/components/SlashCommand'
+import { SaveReasonModal, HistoryPanel, saveHistoryEntry } from '@/components/ChangeLogModal'
+import SearchModal from '@/components/SearchModal'
 import BlockTransferModal from '@/components/BlockTransferModal'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { useToast } from '@/components/ui/Toast'
+import QRModal from '@/components/QRModal'
+import MergeModal from '@/components/MergeModal'
 
 const BLOCK_TYPES: { type: BlockType; label: string; icon: string; description: string }[] = [
   { type: 'text', label: '텍스트', icon: '📝', description: 'Markdown 형식 텍스트' },
@@ -37,6 +50,14 @@ const BLOCK_TYPES: { type: BlockType; label: string; icon: string; description: 
   { type: 'list', label: '리스트', icon: '📋', description: '점/번호/화살표/체크 스타일 목록' },
   { type: 'credential', label: '계정정보', icon: '🔐', description: 'URL / ID / PW 저장 + 복사' },
   { type: 'license', label: '자격/면허', icon: '🪪', description: '자격증 및 면허 정보 관리' },
+  { type: 'poll', label: '투표', icon: '🗳️', description: '선택지 투표 및 결과 시각화' },
+  { type: 'mindmap', label: '마인드맵', icon: '🗺️', description: '계층적 마인드맵 다이어그램' },
+  { type: 'embed', label: '임베드', icon: '📺', description: 'YouTube·Gist·링크 임베드' },
+  { type: 'image', label: '이미지', icon: '🖼️', description: '이미지 업로드 및 캡션' },
+  { type: 'math', label: '수식', icon: '🔢', description: 'LaTeX 수식 렌더링' },
+  { type: 'timer', label: '타이머', icon: '⏱️', description: '뽀모도로 집중 타이머' },
+  { type: 'link', label: '노트 링크', icon: '🔗', description: '다른 노트를 참조로 연결' },
+  { type: 'ai_summary', label: 'AI 요약', icon: '🤖', description: 'Claude AI가 탭 내용을 요약' },
 ]
 
 const BLOCK_TYPES_PER_PAGE = 7
@@ -56,6 +77,14 @@ const BLOCK_PREVIEW_SAMPLES: Record<BlockType, Record<string, unknown>> = {
   list: { style: 'bullet', items: [{ text: '첫 번째 항목' }, { text: '두 번째 항목' }, { text: '세 번째 항목' }] },
   credential: { items: [{ label: 'Google', url: 'https://google.com', accounts: [{ username: 'user@gmail.com', password: 'password123!' }, { username: 'work@gmail.com', password: 'workpass456!' }], memo: '구글 계정' }] },
   license: { items: [{ name: '정보처리기사', date: '2022-11', expiry: '영구', issuer: '한국산업인력공단' }, { name: '운전면허 1종 보통', date: '2019-03', expiry: '영구', issuer: '경찰청' }] },
+  poll: { question: '가장 선호하는 프레임워크는?', options: ['React', 'Vue', 'Svelte'], multiSelect: false },
+  mindmap: { root: { id: '1', text: '중심 주제', children: [{ id: '2', text: '아이디어 1', children: [] }, { id: '3', text: '아이디어 2', children: [] }] } },
+  embed: { url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', embedType: 'youtube', title: 'YouTube 영상', description: 'YouTube·GitHub Gist·링크를 임베드합니다' },
+  link: { links: [{ noteId: '', noteIcon: '📝', noteTitle: '연결할 노트를 선택하세요', memo: '관련 노트 참조' }] },
+  image: { dataUrl: '', caption: '샘플 이미지 캡션', alt: '샘플 이미지' },
+  math: { latex: 'E = mc^2', displayMode: true },
+  timer: { focusMinutes: 25, breakMinutes: 5, label: '집중' },
+  ai_summary: { summary: '', lastGeneratedAt: null, sourceBlockTypes: [] },
 }
 
 const DEFAULT_CONTENT: Record<BlockType, Record<string, unknown>> = {
@@ -73,6 +102,14 @@ const DEFAULT_CONTENT: Record<BlockType, Record<string, unknown>> = {
   list: { style: 'bullet', items: [{ text: '' }] },
   credential: { items: [{ label: '', url: '', accounts: [{ username: '', password: '' }], memo: '' }] },
   license: { items: [{ name: '', date: '', expiry: '', issuer: '' }] },
+  poll: { question: '어떤 옵션을 선택하시겠습니까?', options: ['옵션 A', '옵션 B', '옵션 C'], multiSelect: false },
+  mindmap: { root: { id: '1', text: '중심 주제', children: [{ id: '2', text: '아이디어 1', children: [] }, { id: '3', text: '아이디어 2', children: [] }] } },
+  embed: { url: '', embedType: 'link' },
+  link: { links: [{ noteId: '', noteIcon: '', noteTitle: '', memo: '' }] },
+  image: { dataUrl: '', caption: '', alt: '' },
+  math: { latex: 'E = mc^2', displayMode: true },
+  timer: { focusMinutes: 25, breakMinutes: 5, label: '집중' },
+  ai_summary: { summary: '', lastGeneratedAt: null, sourceBlockTypes: [] },
 }
 
 export default function NoteDetailPage() {
@@ -95,9 +132,90 @@ export default function NoteDetailPage() {
   const [tabNameInput, setTabNameInput] = useState('')
   const tabInputRef = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
-  const [confirmComplete, setConfirmComplete] = useState(false)
   const [confirmDeleteBlock, setConfirmDeleteBlock] = useState<string | null>(null)
+  const [confirmDeleteTab, setConfirmDeleteTab] = useState<string | null>(null)
   const [transferBlock, setTransferBlock] = useState<Block | null>(null)
+  const [showQR, setShowQR] = useState(false)
+  const [showMerge, setShowMerge] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
+  const [showSaveReason, setShowSaveReason] = useState(false)
+  const [showSlash, setShowSlash] = useState(false)
+  const [slashQuery, setSlashQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
+  const [showBookmarks, setShowBookmarks] = useState(false)
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try {
+      const raw = localStorage.getItem('note-archive-bookmarks')
+      const arr: { blockId: string }[] = raw ? JSON.parse(raw) : []
+      return new Set(arr.map(b => b.blockId))
+    } catch { return new Set() }
+  })
+
+  type BookmarkEntry = { blockId: string; noteId: string; noteTitle: string; blockTitle: string; blockType: string; isLocked?: boolean; passwordHash?: string | null }
+
+  const getBookmarks = (): BookmarkEntry[] => {
+    if (typeof window === 'undefined') return []
+    try { return JSON.parse(localStorage.getItem('note-archive-bookmarks') || '[]') } catch { return [] }
+  }
+
+  const toggleBookmark = (block: Block) => {
+    const bookmarks = getBookmarks()
+    const exists = bookmarks.some(b => b.blockId === block.id)
+    let next: BookmarkEntry[]
+    if (exists) {
+      next = bookmarks.filter(b => b.blockId !== block.id)
+    } else {
+      const info = blockTypeInfo(block.type)
+      next = [...bookmarks, {
+        blockId: block.id,
+        noteId: noteId,
+        noteTitle: note?.title || '',
+        blockTitle: block.title || info?.label || block.type,
+        blockType: block.type,
+        isLocked: note?.is_locked || false,
+        passwordHash: note?.password_hash || null,
+      }]
+    }
+    localStorage.setItem('note-archive-bookmarks', JSON.stringify(next))
+    setBookmarkedIds(new Set(next.map(b => b.blockId)))
+  }
+
+  // 북마크 패널 잠금 노트 패스워드 모달
+  const [bmLockedTarget, setBmLockedTarget] = useState<BookmarkEntry | null>(null)
+  const [bmPwInput, setBmPwInput] = useState('')
+  const [bmPwError, setBmPwError] = useState('')
+  const [bmPwChecking, setBmPwChecking] = useState(false)
+
+  const handleBookmarkNavigate = (bm: BookmarkEntry) => {
+    if (bm.isLocked && bm.passwordHash) {
+      setShowBookmarks(false)
+      setBmLockedTarget(bm)
+      setBmPwInput('')
+      setBmPwError('')
+    } else {
+      setShowBookmarks(false)
+      router.push(`/notes/${bm.noteId}`)
+    }
+  }
+
+  const handleBmPasswordSubmit = async () => {
+    if (!bmLockedTarget?.passwordHash || !bmPwInput.trim()) return
+    setBmPwChecking(true)
+    const bcrypt = (await import('bcryptjs')).default
+    const ok = await bcrypt.compare(bmPwInput, bmLockedTarget.passwordHash)
+    setBmPwChecking(false)
+    if (ok) {
+      const { setUnlocked } = await import('@/lib/lockSession')
+      setUnlocked(bmLockedTarget.noteId)
+      router.push(`/notes/${bmLockedTarget.noteId}`)
+      setBmLockedTarget(null)
+    } else {
+      setBmPwError('비밀번호가 틀렸습니다.')
+      setBmPwInput('')
+    }
+  }
 
   const pendingChanges = useRef<Record<string, Record<string, unknown>>>({})
   const pendingTitles = useRef<Record<string, string>>({})
@@ -150,6 +268,7 @@ export default function NoteDetailPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.replace('/'); return }
+      setUserId(session.user.id)
       fetchData()
     })
   }, [fetchData, router])
@@ -160,6 +279,18 @@ export default function NoteDetailPage() {
       tabInputRef.current.select()
     }
   }, [editingTabId])
+
+  // Ctrl+K 전역 단축키
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setShowSearch(true)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   // 페이지 모드 localStorage 복원
   useEffect(() => {
@@ -396,12 +527,24 @@ export default function NoteDetailPage() {
   const renderViewBlock = (block: Block) => {
     const info = blockTypeInfo(block.type)
     const headerLabel = (block.show_title && block.title) ? block.title : (info?.label ?? block.type)
+    const isBookmarked = bookmarkedIds.has(block.id)
     return (
       <div key={block.id} className="glass-card rounded-xl overflow-hidden shadow-sm">
         {/* 항상 표시되는 헤더 */}
         <div className="flex items-center gap-2 px-4 py-2.5 border-b border-sky-300/70 bg-sky-100/60">
           <span className="text-base">{info?.icon}</span>
-          <span className="text-sm font-semibold text-sky-800">{headerLabel}</span>
+          <span className="text-sm font-semibold text-sky-800 flex-1">{headerLabel}</span>
+          <button
+            onClick={() => toggleBookmark(block)}
+            title={isBookmarked ? '북마크 해제' : '북마크'}
+            className={`w-6 h-6 flex items-center justify-center rounded-md transition-all hover:scale-110 ${
+              isBookmarked ? 'text-yellow-500' : 'text-sky-300 hover:text-yellow-400'
+            }`}
+          >
+            <svg className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </button>
         </div>
         <div className="p-5">
           {block.type === 'text' && (
@@ -444,6 +587,8 @@ export default function NoteDetailPage() {
               content={block.content as Parameters<typeof ChecklistBlock>[0]['content']}
               isEditing={false}
               onChange={(c) => saveBlockNow(block.id, c as Record<string, unknown>)}
+              noteId={noteId}
+              noteTitle={note?.title}
             />
           )}
           {block.type === 'file' && (
@@ -500,6 +645,68 @@ export default function NoteDetailPage() {
               content={block.content as Parameters<typeof LicenseBlock>[0]['content']}
               isEditing={false}
               onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'poll' && (
+            <PollBlock
+              content={block.content as Parameters<typeof PollBlock>[0]['content']}
+              isEditing={false}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+              blockId={block.id}
+            />
+          )}
+          {block.type === 'mindmap' && (
+            <MindmapBlock
+              content={block.content as Parameters<typeof MindmapBlock>[0]['content']}
+              isEditing={false}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'embed' && (
+            <EmbedBlock
+              content={block.content as Parameters<typeof EmbedBlock>[0]['content']}
+              isEditing={false}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'image' && (
+            <ImageBlock
+              content={block.content as Parameters<typeof ImageBlock>[0]['content']}
+              isEditing={false}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'math' && (
+            <MathBlock
+              content={block.content as Parameters<typeof MathBlock>[0]['content']}
+              isEditing={false}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'timer' && (
+            <TimerBlock
+              content={block.content as Parameters<typeof TimerBlock>[0]['content']}
+              isEditing={false}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'link' && (
+            <LinkBlock
+              content={block.content as Parameters<typeof LinkBlock>[0]['content']}
+              isEditing={false}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+              currentNoteId={noteId}
+            />
+          )}
+          {block.type === 'ai_summary' && (
+            <AiSummaryBlock
+              content={block.content as Parameters<typeof AiSummaryBlock>[0]['content']}
+              isEditing={false}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+              tabTextContent={activeTabBlocks
+                .filter(b => b.type === 'text' && b.id !== block.id)
+                .map(b => (b.content as { markdown?: string }).markdown || '')
+                .join('\n\n')}
             />
           )}
         </div>
@@ -674,6 +881,8 @@ export default function NoteDetailPage() {
               content={block.content as Parameters<typeof ChecklistBlock>[0]['content']}
               isEditing={isEditing}
               onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+              noteId={noteId}
+              noteTitle={note?.title}
             />
           )}
           {block.type === 'file' && (
@@ -732,6 +941,68 @@ export default function NoteDetailPage() {
               onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
             />
           )}
+          {block.type === 'poll' && (
+            <PollBlock
+              content={block.content as Parameters<typeof PollBlock>[0]['content']}
+              isEditing={isEditing}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+              blockId={block.id}
+            />
+          )}
+          {block.type === 'mindmap' && (
+            <MindmapBlock
+              content={block.content as Parameters<typeof MindmapBlock>[0]['content']}
+              isEditing={isEditing}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'embed' && (
+            <EmbedBlock
+              content={block.content as Parameters<typeof EmbedBlock>[0]['content']}
+              isEditing={isEditing}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'image' && (
+            <ImageBlock
+              content={block.content as Parameters<typeof ImageBlock>[0]['content']}
+              isEditing={isEditing}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'math' && (
+            <MathBlock
+              content={block.content as Parameters<typeof MathBlock>[0]['content']}
+              isEditing={isEditing}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'timer' && (
+            <TimerBlock
+              content={block.content as Parameters<typeof TimerBlock>[0]['content']}
+              isEditing={isEditing}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+            />
+          )}
+          {block.type === 'link' && (
+            <LinkBlock
+              content={block.content as Parameters<typeof LinkBlock>[0]['content']}
+              isEditing={isEditing}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+              currentNoteId={noteId}
+            />
+          )}
+          {block.type === 'ai_summary' && (
+            <AiSummaryBlock
+              content={block.content as Parameters<typeof AiSummaryBlock>[0]['content']}
+              isEditing={isEditing}
+              onChange={(c) => updateBlockContent(block.id, c as Record<string, unknown>)}
+              tabTextContent={activeTabBlocks
+                .filter(b => b.type === 'text' && b.id !== block.id)
+                .map(b => (b.content as { markdown?: string }).markdown || '')
+                .join('\n\n')}
+            />
+          )}
         </div>
       </div>
     )
@@ -756,7 +1027,7 @@ export default function NoteDetailPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="glass-header sticky top-0 z-30">
+      <header className="glass-header fixed top-0 left-0 right-0 z-30">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
           <Link
             href="/"
@@ -794,9 +1065,74 @@ export default function NoteDetailPage() {
               </div>
             )}
 
+            {/* 전체 검색 버튼 */}
+            <button
+              onClick={() => setShowSearch(true)}
+              title="전체 검색 (Ctrl+K)"
+              className="p-1.5 rounded-lg border border-sky-200/60 text-sky-700 hover:text-sky-900 transition-all" style={{ background: 'var(--dm-surface-subtle)' }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+
+            {/* 북마크 패널 버튼 */}
+            <button
+              onClick={() => setShowBookmarks(true)}
+              title="북마크된 블록"
+              className={`p-1.5 rounded-lg border transition-all ${
+                bookmarkedIds.size > 0
+                  ? 'border-yellow-500/40 text-yellow-400'
+                  : 'border-sky-200/60 text-sky-700 hover:text-sky-900'
+              }`}
+              style={{ background: bookmarkedIds.size > 0 ? 'rgba(234,179,8,0.15)' : 'var(--dm-surface-subtle)' }}
+            >
+              <svg className="w-4 h-4" fill={bookmarkedIds.size > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+            </button>
+
+            {/* 병합 버튼 — 뷰 모드에서만 표시 */}
+            {!isEditMode && (
+              <button
+                onClick={() => setShowMerge(true)}
+                title="다른 노트 병합"
+                className="p-1.5 rounded-lg border border-sky-200/60 text-sky-700 hover:text-sky-900 transition-all" style={{ background: 'var(--dm-surface-subtle)' }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+              </button>
+            )}
+
+            {/* QR 코드 공유 — 뷰 모드에서만 표시 */}
+            {!isEditMode && (
+              <button
+                onClick={() => setShowQR(true)}
+                title="QR 코드로 공유"
+                className="p-1.5 rounded-lg border border-sky-200/60 text-sky-700 hover:text-sky-900 transition-all" style={{ background: 'var(--dm-surface-subtle)' }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+              </button>
+            )}
+
+            {!isEditMode && (
+              <button
+                onClick={() => setShowHistory(true)}
+                title="변경 이력"
+                className="p-1.5 rounded-lg border border-sky-200/60 text-sky-700 hover:text-sky-900 transition-all" style={{ background: 'var(--dm-surface-subtle)' }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            )}
+
             {isEditMode ? (
               <button
-                onClick={() => setConfirmComplete(true)}
+                onClick={() => setShowSaveReason(true)}
                 disabled={saving}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-sky-500 text-white hover:bg-sky-400 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
               >
@@ -837,16 +1173,16 @@ export default function NoteDetailPage() {
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              편집 중 — 완료 버튼을 클릭하면 저장 후 보기 모드로 돌아갑니다
+              편집 중, 완료 버튼을 클릭하면 저장 후 보기 모드로 돌아갑니다
             </p>
           </div>
         )}
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+      <div className={`max-w-5xl mx-auto px-4 sm:px-6 py-6 ${isEditMode ? 'pt-28' : 'pt-20'}`}>
         {/* Tabs bar */}
         <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
-          <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.8)' }}>
+          <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: 'var(--dm-surface-subtle)', backdropFilter: 'blur(12px)', border: '1px solid var(--dm-border-subtle)' }}>
             {tabs.map((tab) => (
               <div
                 key={tab.id}
@@ -887,7 +1223,7 @@ export default function NoteDetailPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      deleteTab(tab.id)
+                      setConfirmDeleteTab(tab.id)
                     }}
                     className="opacity-0 group-hover:opacity-100 mr-1.5 text-sky-400 hover:text-red-400 transition-all"
                   >
@@ -931,15 +1267,24 @@ export default function NoteDetailPage() {
                   {isEditMode ? '블록을 추가해서 노트를 작성해보세요.' : '편집 버튼을 눌러 블록을 추가해보세요.'}
                 </p>
                 {isEditMode && (
-                  <button
-                    onClick={() => { setBlockTypePage(0); setShowBlockTypeModal(true) }}
-                    className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all shadow-lg"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    블록 추가
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => { setSlashQuery(''); setShowSlash(true) }}
+                      title="/ 슬래시 커맨드로 블록 추가"
+                      className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-mono font-semibold bg-white/70 hover:bg-white/90 border border-sky-300/60 text-sky-700 hover:text-sky-900 transition-all shadow-sm"
+                    >
+                      /
+                    </button>
+                    <button
+                      onClick={() => { setBlockTypePage(0); setShowBlockTypeModal(true) }}
+                      className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all shadow-lg"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      블록 추가
+                    </button>
+                  </div>
                 )}
               </div>
             )
@@ -991,7 +1336,7 @@ export default function NoteDetailPage() {
                         onClick={goPrev}
                         disabled={currentPageNum === 0}
                         className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:scale-110 active:scale-95"
-                        style={{ background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(14,165,233,0.35)', boxShadow: '0 2px 8px rgba(14,165,233,0.15)', backdropFilter: 'blur(8px)' }}
+                        style={{ background: 'var(--dm-surface-subtle)', border: '1.5px solid rgba(14,165,233,0.35)', boxShadow: '0 2px 8px rgba(14,165,233,0.15)', backdropFilter: 'blur(8px)' }}
                       >
                         <svg className="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
@@ -1023,7 +1368,7 @@ export default function NoteDetailPage() {
                         onClick={goNext}
                         disabled={currentPageNum >= totalPages - 1}
                         className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:scale-110 active:scale-95"
-                        style={{ background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(14,165,233,0.35)', boxShadow: '0 2px 8px rgba(14,165,233,0.15)', backdropFilter: 'blur(8px)' }}
+                        style={{ background: 'var(--dm-surface-subtle)', border: '1.5px solid rgba(14,165,233,0.35)', boxShadow: '0 2px 8px rgba(14,165,233,0.15)', backdropFilter: 'blur(8px)' }}
                       >
                         <svg className="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
@@ -1077,6 +1422,7 @@ export default function NoteDetailPage() {
             </>
           )
         })()}
+
       </div>
 
       {/* Block Type Modal */}
@@ -1093,9 +1439,9 @@ export default function NoteDetailPage() {
             <div
               className="rounded-2xl w-full shadow-2xl animate-slide-up flex overflow-hidden"
               style={{
-                background: 'rgba(255,255,255,0.88)',
+                background: 'var(--dm-surface-modal)',
                 backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.9)',
+                border: '1px solid var(--dm-border)',
                 maxWidth: hoveredBlockType ? '800px' : '440px',
                 transition: 'max-width 0.2s ease',
               }}
@@ -1190,7 +1536,7 @@ export default function NoteDetailPage() {
                     <span className="text-sky-800 font-semibold text-sm">{BLOCK_TYPES.find(b => b.type === hoveredBlockType)?.label} 미리보기</span>
                     <span className="ml-auto text-[10px] text-sky-400 bg-sky-100 px-2 py-0.5 rounded-full">샘플</span>
                   </div>
-                  <div className="bg-white/80 rounded-xl p-4 border border-sky-300/50 shadow-sm text-sm">
+                  <div className="rounded-xl p-4 shadow-sm text-sm" style={{ background: 'var(--dm-surface-card)', border: '1px solid var(--dm-border)' }}>
                     {hoveredBlockType === 'text' && (
                       <TextBlock content={previewSample as Parameters<typeof TextBlock>[0]['content']} isEditing={false} onChange={() => {}} />
                     )}
@@ -1233,6 +1579,30 @@ export default function NoteDetailPage() {
                     {hoveredBlockType === 'license' && (
                       <LicenseBlock content={previewSample as Parameters<typeof LicenseBlock>[0]['content']} isEditing={false} onChange={() => {}} />
                     )}
+                    {hoveredBlockType === 'image' && (
+                      <ImageBlock content={previewSample as Parameters<typeof ImageBlock>[0]['content']} isEditing={false} onChange={() => {}} />
+                    )}
+                    {hoveredBlockType === 'math' && (
+                      <MathBlock content={previewSample as Parameters<typeof MathBlock>[0]['content']} isEditing={false} onChange={() => {}} />
+                    )}
+                    {hoveredBlockType === 'timer' && (
+                      <TimerBlock content={previewSample as Parameters<typeof TimerBlock>[0]['content']} isEditing={false} onChange={() => {}} />
+                    )}
+                    {hoveredBlockType === 'link' && (
+                      <LinkBlock content={previewSample as Parameters<typeof LinkBlock>[0]['content']} isEditing={false} onChange={() => {}} currentNoteId={noteId} />
+                    )}
+                    {hoveredBlockType === 'ai_summary' && (
+                      <AiSummaryBlock content={previewSample as Parameters<typeof AiSummaryBlock>[0]['content']} isEditing={false} onChange={() => {}} />
+                    )}
+                    {hoveredBlockType === 'poll' && (
+                      <PollBlock content={previewSample as Parameters<typeof PollBlock>[0]['content']} isEditing={false} onChange={() => {}} />
+                    )}
+                    {hoveredBlockType === 'mindmap' && (
+                      <MindmapBlock content={previewSample as Parameters<typeof MindmapBlock>[0]['content']} isEditing={false} onChange={() => {}} />
+                    )}
+                    {hoveredBlockType === 'embed' && (
+                      <EmbedBlock content={previewSample as Parameters<typeof EmbedBlock>[0]['content']} isEditing={false} onChange={() => {}} />
+                    )}
                   </div>
                   <p className="text-center text-xs text-sky-400 mt-3">클릭하면 이 블록이 추가됩니다</p>
                 </div>
@@ -1250,7 +1620,7 @@ export default function NoteDetailPage() {
           className={`fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 ${
             tabPageMode[activeTabId]
               ? 'bg-sky-500 text-white shadow-sky-300'
-              : 'bg-white/90 text-sky-500 border border-sky-200 hover:border-sky-400'
+              : 'bg-white/90 dark:bg-slate-700 dark:border-slate-600 text-sky-500 border border-sky-200 hover:border-sky-400'
           }`}
           style={{ backdropFilter: 'blur(12px)' }}
         >
@@ -1260,16 +1630,28 @@ export default function NoteDetailPage() {
         </button>
       )}
 
-      {/* 완료(저장) 확인 */}
+      {/* 변경 사유 + 저장 */}
+      {showSaveReason && (
+        <SaveReasonModal
+          onConfirm={async (msg) => {
+            setShowSaveReason(false)
+            if (msg.trim()) await saveHistoryEntry(noteId, msg)
+            handleComplete()
+          }}
+          onCancel={() => setShowSaveReason(false)}
+        />
+      )}
+
+      {/* 탭 삭제 확인 */}
       <ConfirmDialog
-        isOpen={confirmComplete}
-        title="변경사항 저장"
-        message="편집한 내용을 저장하고 보기 모드로 전환하시겠습니까?"
-        confirmLabel="저장"
+        isOpen={confirmDeleteTab !== null}
+        title="탭 삭제"
+        message="이 탭과 탭 안의 모든 블록이 삭제됩니다. 계속하시겠습니까?"
+        confirmLabel="삭제"
         cancelLabel="취소"
-        variant="info"
-        onConfirm={() => { setConfirmComplete(false); handleComplete() }}
-        onCancel={() => setConfirmComplete(false)}
+        variant="danger"
+        onConfirm={() => { const id = confirmDeleteTab; setConfirmDeleteTab(null); if (id) deleteTab(id) }}
+        onCancel={() => setConfirmDeleteTab(null)}
       />
 
       {/* 블록 삭제 확인 */}
@@ -1297,6 +1679,197 @@ export default function NoteDetailPage() {
           }}
           onCopied={() => {}}
         />
+      )}
+
+      {/* 노트 병합 모달 */}
+      {showMerge && (
+        <MergeModal
+          currentNoteId={noteId}
+          onClose={() => setShowMerge(false)}
+          onMerged={() => { setShowMerge(false); fetchData() }}
+        />
+      )}
+
+      {/* QR 코드 공유 모달 */}
+      {showQR && note && (
+        <QRModal
+          noteId={noteId}
+          noteTitle={note.title}
+          isLocked={note.is_locked}
+          onClose={() => setShowQR(false)}
+        />
+      )}
+
+      {/* 전체 검색 모달 */}
+      {showSearch && <SearchModal onClose={() => setShowSearch(false)} />}
+
+      {/* 북마크 패널 */}
+      {showBookmarks && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-end"
+          style={{ background: 'rgba(2,12,30,0.4)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowBookmarks(false) }}
+        >
+          <div
+            className="w-80 h-full flex flex-col shadow-2xl"
+            style={{ background: 'var(--dm-surface-modal)', borderLeft: '1px solid var(--dm-border)' }}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-sky-100">
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                <h3 className="text-sm font-bold text-sky-900">북마크된 블록</h3>
+              </div>
+              <button onClick={() => setShowBookmarks(false)} className="text-sky-400 hover:text-sky-600 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {(() => {
+                const bookmarks = getBookmarks()
+                if (!bookmarks.length) return (
+                  <div className="text-center py-12 text-sky-400">
+                    <svg className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    <p className="text-sm">북마크된 블록이 없습니다</p>
+                    <p className="text-xs mt-1 text-sky-300">블록 헤더의 ★ 버튼으로 추가하세요</p>
+                  </div>
+                )
+                return bookmarks.map(bm => {
+                  const isCurrentNote = bm.noteId === noteId
+                  return (
+                    <div
+                      key={bm.blockId}
+                      className="rounded-xl border border-sky-200/70 p-3 group"
+                      style={{ background: 'var(--dm-surface-card)' }}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <p className="text-xs font-semibold text-sky-900 truncate">{bm.blockTitle}</p>
+                            {bm.isLocked && (
+                              <svg className="w-3 h-3 text-violet-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-sky-500 mt-0.5 truncate">{bm.noteTitle}</p>
+                          <span className="inline-flex items-center gap-1 text-[10px] text-sky-400 bg-sky-100/80 px-1.5 py-0.5 rounded mt-1 border border-sky-200/50">
+                            {bm.blockType}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          {!isCurrentNote && (
+                            <button
+                              onClick={() => handleBookmarkNavigate(bm)}
+                              className="text-sky-400 hover:text-sky-600 transition-colors"
+                              title={bm.isLocked ? '잠금 노트 - 비밀번호 필요' : '노트로 이동'}
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              const next = getBookmarks().filter(b => b.blockId !== bm.blockId)
+                              localStorage.setItem('note-archive-bookmarks', JSON.stringify(next))
+                              setBookmarkedIds(new Set(next.map(b => b.blockId)))
+                            }}
+                            className="text-sky-300 hover:text-red-400 transition-colors"
+                            title="북마크 해제"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 변경 이력 패널 */}
+      {showHistory && (
+        <HistoryPanel noteId={noteId} onClose={() => setShowHistory(false)} />
+      )}
+
+      {/* 북마크 잠금 노트 패스워드 모달 */}
+      {bmLockedTarget && (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center px-4"
+          style={{ background: 'rgba(2,12,30,0.6)', backdropFilter: 'blur(6px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setBmLockedTarget(null) }}
+        >
+          <div className="w-full max-w-sm rounded-2xl p-6 shadow-2xl" style={{ background: 'var(--dm-surface-modal)', border: '1px solid var(--dm-border)' }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-violet-100/20 border border-violet-400/30 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-violet-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-sky-900">{bmLockedTarget.noteTitle}</p>
+                <p className="text-xs text-sky-600 mt-0.5">잠금 노트, 비밀번호를 입력하세요</p>
+              </div>
+            </div>
+            <input
+              autoFocus
+              type="password"
+              value={bmPwInput}
+              onChange={(e) => { setBmPwInput(e.target.value); setBmPwError('') }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleBmPasswordSubmit(); if (e.key === 'Escape') setBmLockedTarget(null) }}
+              placeholder="숫자 비밀번호..."
+              inputMode="numeric"
+              maxLength={6}
+              className={`w-full rounded-xl px-4 py-2.5 text-sky-900 text-sm outline-none border transition-all ${
+                bmPwError ? 'border-red-400 bg-red-50/10' : 'border-sky-200/40 focus:border-sky-400'
+              }`}
+              style={{ background: 'var(--dm-surface-input)' }}
+            />
+            {bmPwError && <p className="text-xs text-red-400 mt-1.5">{bmPwError}</p>}
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setBmLockedTarget(null)} className="flex-1 py-2 rounded-xl border border-sky-200/40 text-sky-700 text-sm hover:bg-sky-50/10 transition-all">취소</button>
+              <button
+                onClick={handleBmPasswordSubmit}
+                disabled={bmPwChecking || !bmPwInput.trim()}
+                className="flex-1 py-2 rounded-xl bg-sky-500 text-white text-sm font-semibold hover:bg-sky-400 disabled:opacity-50 transition-all"
+              >{bmPwChecking ? '확인 중...' : '열기'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 슬래시 커맨드 */}
+      {showSlash && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => { setShowSlash(false); setSlashQuery('') }}>
+          <div onClick={e => e.stopPropagation()} className="w-80">
+            <div className="mb-2 px-3">
+              <input
+                autoFocus
+                type="text"
+                value={slashQuery}
+                onChange={e => setSlashQuery(e.target.value)}
+                placeholder="블록 유형 검색..."
+                className="w-full bg-white/90 border border-sky-300/60 rounded-xl px-4 py-2.5 text-sky-900 placeholder-sky-400 outline-none focus:border-sky-500 text-sm shadow-lg"
+              />
+            </div>
+            <SlashCommand
+              query={slashQuery}
+              onSelect={(type) => { setShowSlash(false); setSlashQuery(''); addBlock(type) }}
+              onClose={() => { setShowSlash(false); setSlashQuery('') }}
+            />
+          </div>
+        </div>
       )}
     </div>
   )

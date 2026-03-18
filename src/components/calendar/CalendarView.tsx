@@ -149,20 +149,20 @@ export default function CalendarView({ userId, initialOpen = false, onModalClose
   }
 
   const CELL_BORDER = '1px solid rgba(147,210,255,0.3)'
-  const BG_IN    = 'rgba(255,255,255,0.72)'
-  const BG_OUT   = 'rgba(224,240,255,0.38)'
+  const BG_IN    = 'var(--dm-surface-subtle)'
+  const BG_OUT   = 'var(--dm-surface-item)'
 
   return (
     <div className="space-y-5">
       {/* ── Calendar card ── */}
       <div
         className="rounded-2xl overflow-hidden shadow-lg"
-        style={{ background: 'rgba(230,245,255,0.95)', border: '1px solid rgba(147,210,255,0.5)', backdropFilter: 'blur(20px)' }}
+        style={{ background: 'var(--dm-surface-panel)', border: '1px solid rgba(147,210,255,0.5)', backdropFilter: 'blur(20px)' }}
       >
         {/* Navigation */}
         <div
           className="flex items-center justify-between px-5 py-3.5"
-          style={{ background: 'rgba(186,230,253,0.7)', borderBottom: CELL_BORDER }}
+          style={{ background: 'var(--dm-border)', borderBottom: CELL_BORDER }}
         >
           <div className="flex items-center gap-1">
             <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-sky-200/60 text-sky-700 transition-colors">
@@ -307,9 +307,9 @@ export default function CalendarView({ userId, initialOpen = false, onModalClose
       {thisMonthEvents.length > 0 && (
         <div
           className="rounded-2xl overflow-hidden shadow-md"
-          style={{ background: 'rgba(230,245,255,0.95)', border: '1px solid rgba(147,210,255,0.4)', backdropFilter: 'blur(20px)' }}
+          style={{ background: 'var(--dm-surface-panel)', border: '1px solid rgba(147,210,255,0.4)', backdropFilter: 'blur(20px)' }}
         >
-          <div className="flex items-center gap-2 px-5 py-3.5" style={{ background: 'rgba(186,230,253,0.7)', borderBottom: CELL_BORDER }}>
+          <div className="flex items-center gap-2 px-5 py-3.5" style={{ background: 'var(--dm-border)', borderBottom: CELL_BORDER }}>
             <svg className="w-4 h-4 text-sky-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>

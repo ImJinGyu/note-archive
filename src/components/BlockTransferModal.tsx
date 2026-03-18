@@ -131,7 +131,7 @@ export default function BlockTransferModal({ block, currentNoteId, onClose, onMo
                   className={`py-2 rounded-xl text-sm font-semibold border-2 transition-all ${
                     mode === m
                       ? 'bg-sky-500 border-sky-500 text-white shadow-md'
-                      : 'border-sky-200 text-sky-700 bg-white/60 hover:border-sky-400'
+                      : 'border-sky-200 text-sky-700 hover:border-sky-400'
                   }`}
                 >
                   {m === 'copy' ? '📋 복사' : '✂️ 이동'}
@@ -151,7 +151,7 @@ export default function BlockTransferModal({ block, currentNoteId, onClose, onMo
             ) : otherNotes.length === 0 ? (
               <div className="text-xs text-sky-500 py-3 text-center">다른 노트가 없습니다.</div>
             ) : (
-              <div className="max-h-44 overflow-y-auto rounded-xl border border-sky-200/60 divide-y divide-sky-100" style={{ background: 'rgba(240,249,255,0.7)' }}>
+              <div className="max-h-44 overflow-y-auto rounded-xl border border-sky-200/60 divide-y divide-sky-100" style={{ background: 'var(--dm-surface-card)' }}>
                 {otherNotes.map((note) => (
                   <button
                     key={note.id}
@@ -192,7 +192,7 @@ export default function BlockTransferModal({ block, currentNoteId, onClose, onMo
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${
                         selectedTabId === tab.id
                           ? 'bg-sky-500 border-sky-500 text-white'
-                          : 'border-sky-200 text-sky-700 bg-white/60 hover:border-sky-400'
+                          : 'border-sky-200 text-sky-700 hover:border-sky-400'
                       }`}
                     >
                       {tab.name}
