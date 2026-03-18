@@ -1580,6 +1580,9 @@ video {
 .border-violet-400\/30 {
   border-color: rgb(167 139 250 / 0.3);
 }
+.border-red-500\/20 {
+  border-color: rgb(239 68 68 / 0.2);
+}
 .border-t-sky-600 {
   --tw-border-opacity: 1;
   border-top-color: rgb(2 132 199 / var(--tw-border-opacity, 1));
@@ -2480,6 +2483,10 @@ video {
 .text-yellow-400 {
   --tw-text-opacity: 1;
   color: rgb(250 204 21 / var(--tw-text-opacity, 1));
+}
+.text-green-300 {
+  --tw-text-opacity: 1;
+  color: rgb(134 239 172 / var(--tw-text-opacity, 1));
 }
 .underline {
   text-decoration-line: underline;

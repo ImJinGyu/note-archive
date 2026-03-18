@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { translateError } from '@/lib/authErrors'
 import type { User } from '@supabase/supabase-js'
 import { useToast } from '@/components/ui/Toast'
 
@@ -96,7 +97,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
 
     const { error } = await supabase.auth.updateUser({ password: newPwd })
     setPwdLoading(false)
-    if (error) return setPwdError(error.message)
+    if (error) return setPwdError(translateError(error.message))
 
     showToast('비밀번호가 변경되었습니다.', 'success')
     setCurrentPwd('')
@@ -119,7 +120,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
       friendlyName: `totp-${Date.now()}`,
     })
     setTfaLoading(false)
-    if (error || !data) return showToast('2FA 설정 실패: ' + error?.message, 'error')
+    if (error || !data) return showToast('2FA 설정에 실패했습니다.', 'error')
     setQrCode(data.totp.qr_code)
     setSecret(data.totp.secret)
     setEnrollFactorId(data.id)
@@ -132,7 +133,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
     try {
       const { data: challenge, error: challengeErr } = await supabase.auth.mfa.challenge({ factorId: enrollFactorId })
       if (challengeErr || !challenge) {
-        showToast('챌린지 생성 실패: ' + (challengeErr?.message ?? ''), 'error')
+        showToast('인증 요청에 실패했습니다.', 'error')
         return
       }
       const { error } = await supabase.auth.mfa.verify({
@@ -141,7 +142,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
         code: totpCode,
       })
       if (error) {
-        showToast('코드가 올바르지 않습니다: ' + error.message, 'error')
+        showToast('인증 코드가 올바르지 않습니다.', 'error')
         return
       }
       // 검증 성공 — 남아있는 unverified factor 정리 (실패해도 무시)
@@ -170,7 +171,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
     setTfaLoading(true)
     const { error } = await supabase.auth.mfa.unenroll({ factorId })
     setTfaLoading(false)
-    if (error) return showToast('비활성화 실패: ' + error.message, 'error')
+    if (error) return showToast('2FA 비활성화에 실패했습니다.', 'error')
     showToast('2FA가 비활성화되었습니다.', 'success')
     loadFactors()
   }
@@ -188,7 +189,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
       .from('blocked_ips')
       .insert({ ip: trimmed, reason: newIPReason.trim() || null })
     setIPLoading(false)
-    if (error) return showToast('추가 실패: ' + error.message, 'error')
+    if (error) return showToast('IP 차단 추가에 실패했습니다.', 'error')
     setNewIP('')
     setNewIPReason('')
     loadBlockedIPs()
@@ -227,7 +228,7 @@ export default function AccountModal({ isOpen, user, onClose, onSignOut }: Accou
     setWithdrawLoading(false)
     if (!res.ok) {
       const data = await res.json()
-      return showToast('탈퇴 실패: ' + data.error, 'error')
+      return showToast('탈퇴 처리에 실패했습니다.', 'error')
     }
     await supabase.auth.signOut()
     showToast('탈퇴가 완료되었습니다.', 'success')

@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useState, useEffect, useRef } from 'react'
 import { signIn, signUp, supabase } from '@/lib/supabase'
+import { translateError } from '@/lib/authErrors'
 import { useToast } from '@/components/ui/Toast'
 
 interface AuthModalProps {
@@ -69,6 +70,9 @@ export default function AuthModal({ isOpen, initialTab = 'login', onClose, onSuc
   const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSent, setResendSent] = useState(false)
 
   // MFA
   const [mfaFactorId, setMfaFactorId] = useState('')
@@ -92,6 +96,8 @@ export default function AuthModal({ isOpen, initialTab = 'login', onClose, onSuc
     setTotpCode('')
     setForgotSent(false)
     setLockoutSec(0)
+    setEmailNotConfirmed(false)
+    setResendSent(false)
   }, [initialTab, isOpen])
 
   // Lockout countdown timer
@@ -149,6 +155,13 @@ export default function AuthModal({ isOpen, initialTab = 'login', onClose, onSuc
 
         const { error: err } = await signIn(email, password)
         if (err) {
+          // 이메일 미인증 처리
+          if (err.message === 'Email not confirmed') {
+            setEmailNotConfirmed(true)
+            setError('이메일 인증이 완료되지 않았습니다. 가입 시 받은 인증 메일을 확인해주세요.')
+            setLoading(false)
+            return
+          }
           // Rate limit 업데이트
           const newCount = (rl.count ?? 0) + 1
           if (newCount >= MAX_ATTEMPTS) {
@@ -159,10 +172,7 @@ export default function AuthModal({ isOpen, initialTab = 'login', onClose, onSuc
             setLockoutSec(LOCKOUT_MS / 1000)
           } else {
             setRateLimit(email, newCount, null)
-            const msg = err.message === 'Invalid login credentials'
-              ? '이메일 또는 비밀번호가 올바르지 않습니다.'
-              : err.message
-            setError(`${msg} (${newCount}/${MAX_ATTEMPTS}회 실패)`)
+              setError(`${translateError(err.message)} (${newCount}/${MAX_ATTEMPTS}회 실패)`)
           }
           setLoading(false)
           return
@@ -190,18 +200,21 @@ export default function AuthModal({ isOpen, initialTab = 'login', onClose, onSuc
         onClose()
       } else {
         // 회원가입
-        const { error: err } = await signUp(email, password)
+        const { data: signUpData, error: err } = await signUp(email, password)
         if (err) throw err
-        showToast('회원가입 완료! 이메일을 확인해주세요.', 'success')
+        // identities가 비어있으면 이미 가입된 이메일 (Supabase 이메일 인증 활성 시 동작)
+        if (signUpData.user && signUpData.user.identities?.length === 0) {
+          setError('이미 가입된 이메일입니다.')
+          setLoading(false)
+          return
+        }
+        showToast('회원가입 완료! 인증 메일을 확인해주세요.', 'success')
         setMode('login')
         setPassword('')
       }
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message ?? '오류가 발생했습니다.'
-      setError(
-        msg === 'Invalid login credentials' ? '이메일 또는 비밀번호가 올바르지 않습니다.' :
-        msg === 'User already registered' ? '이미 가입된 이메일입니다.' : msg
-      )
+      setError(translateError(msg))
     } finally {
       setLoading(false)
     }
@@ -244,6 +257,14 @@ export default function AuthModal({ isOpen, initialTab = 'login', onClose, onSuc
     setLoading(false)
     if (error) { setError(error.message); return }
     setForgotSent(true)
+  }
+
+  const handleResendConfirmation = async () => {
+    setResendLoading(true)
+    const { error } = await supabase.auth.resend({ type: 'signup', email })
+    setResendLoading(false)
+    if (error) { setError(error.message); return }
+    setResendSent(true)
   }
 
   const isLogin = mode === 'login'
@@ -375,14 +396,30 @@ export default function AuthModal({ isOpen, initialTab = 'login', onClose, onSuc
         </div>
 
         {error && (
-          <p className="text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl px-3 py-2">
-            {error}
+          <div className="text-sm text-red-300 bg-red-900/30 border border-red-500/30 rounded-xl px-3 py-2">
+            <p>{error}</p>
             {lockoutSec > 0 && (
               <span className="block text-xs mt-1 text-red-400">
                 남은 시간: {Math.floor(lockoutSec / 60)}:{String(lockoutSec % 60).padStart(2, '0')}
               </span>
             )}
-          </p>
+            {emailNotConfirmed && (
+              <div className="mt-2 pt-2 border-t border-red-500/20">
+                {resendSent ? (
+                  <p className="text-xs text-green-300">✓ 인증 메일을 재전송했습니다. 받은 편지함을 확인해주세요.</p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendConfirmation}
+                    disabled={resendLoading}
+                    className="text-xs text-sky-300 hover:text-sky-200 underline underline-offset-2 transition-colors disabled:opacity-60"
+                  >
+                    {resendLoading ? '전송 중...' : '인증 메일 재전송'}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         {isLogin && (

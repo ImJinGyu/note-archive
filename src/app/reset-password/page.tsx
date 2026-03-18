@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { translateError } from '@/lib/authErrors'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -21,7 +22,7 @@ export default function ResetPasswordPage() {
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ password })
     setLoading(false)
-    if (error) return setError(error.message)
+    if (error) return setError(translateError(error.message))
 
     setDone(true)
     setTimeout(() => router.push('/'), 2500)
