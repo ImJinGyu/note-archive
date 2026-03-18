@@ -23,6 +23,9 @@ type HistoryEntry = {
   CREATE POLICY "Users manage own history" ON note_history
     FOR ALL USING (
       note_id IN (SELECT id FROM notes WHERE user_id = auth.uid())
+    )
+    WITH CHECK (
+      note_id IN (SELECT id FROM notes WHERE user_id = auth.uid())
     );
 */
 
@@ -137,7 +140,12 @@ export function HistoryPanel({ noteId, onClose }: HistoryPanelProps) {
   )
 }
 
-export async function saveHistoryEntry(noteId: string, message: string) {
-  if (!message.trim()) return
-  await (supabase as any).from('note_history').insert({ note_id: noteId, message: message.trim() })
+export async function saveHistoryEntry(noteId: string, message: string): Promise<string | null> {
+  const text = message.trim() || '저장됨'
+  const { error } = await (supabase as any).from('note_history').insert({ note_id: noteId, message: text })
+  if (error) {
+    console.error('[변경이력 저장 실패]', error)
+    return error.message
+  }
+  return null
 }

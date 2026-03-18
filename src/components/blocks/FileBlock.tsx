@@ -27,6 +27,32 @@ function getFileExtension(name: string): string {
   return name.split('.').pop()?.toLowerCase() ?? ''
 }
 
+const EXT_LABELS: Record<string, string> = {
+  md: 'Markdown', sql: 'SQL', txt: '텍스트', csv: 'CSV', json: 'JSON',
+  xml: 'XML', html: 'HTML', css: 'CSS', js: 'JavaScript', ts: 'TypeScript',
+  tsx: 'TypeScript', jsx: 'JavaScript', py: 'Python', java: 'Java',
+  go: 'Go', rs: 'Rust', sh: 'Shell', yaml: 'YAML', yml: 'YAML',
+  toml: 'TOML', env: '환경 설정', example: '예제 파일', gitignore: 'Git 설정',
+  lock: '잠금 파일', pdf: 'PDF', png: 'PNG', jpg: 'JPEG', jpeg: 'JPEG',
+  gif: 'GIF', svg: 'SVG', webp: 'WebP', zip: 'ZIP', tar: 'TAR', gz: 'GZIP',
+  docx: 'Word', xlsx: 'Excel', pptx: 'PowerPoint', mp4: '동영상', mp3: '오디오',
+}
+
+function getFileTypeLabel(file: FileItem): string {
+  const ext = getFileExtension(file.name)
+  if (EXT_LABELS[ext]) return EXT_LABELS[ext]
+  if (file.type) {
+    if (file.type.startsWith('image/')) return file.type.split('/')[1].toUpperCase()
+    if (file.type === 'application/pdf') return 'PDF'
+    if (file.type.startsWith('text/')) return '텍스트'
+    if (file.type.includes('word') || file.type.includes('document')) return 'Word'
+    if (file.type.includes('excel') || file.type.includes('spreadsheet')) return 'Excel'
+    if (file.type.includes('zip') || file.type.includes('rar')) return 'ZIP'
+    return file.type
+  }
+  return ext ? ext.toUpperCase() : '알 수 없는 형식'
+}
+
 const PREVIEWABLE_EXTS = ['md', 'txt', 'csv', 'json', 'xml', 'html', 'css', 'js', 'ts']
 
 function canPreview(file: FileItem): boolean {
@@ -227,7 +253,7 @@ export default function FileBlock({ content, isEditing, onChange }: FileBlockPro
             <span className="text-2xl flex-shrink-0">{getFileIcon(file.type)}</span>
             <div className="flex-1 min-w-0">
               <p className="text-sky-900 text-sm font-medium truncate">{file.name}</p>
-              <p className="text-sky-700 text-xs">{formatFileSize(file.size)} · {file.type || '알 수 없는 형식'}</p>
+              <p className="text-sky-700 text-xs">{formatFileSize(file.size)} · {getFileTypeLabel(file)}</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {canPreview(file) && (

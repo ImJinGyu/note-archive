@@ -26,7 +26,6 @@ import MathBlock from '@/components/blocks/MathBlock'
 import TimerBlock from '@/components/blocks/TimerBlock'
 import LinkBlock from '@/components/blocks/LinkBlock'
 import AiSummaryBlock from '@/components/blocks/AiSummaryBlock'
-import SlashCommand from '@/components/SlashCommand'
 import { SaveReasonModal, HistoryPanel, saveHistoryEntry } from '@/components/ChangeLogModal'
 import SearchModal from '@/components/SearchModal'
 import BlockTransferModal from '@/components/BlockTransferModal'
@@ -60,7 +59,7 @@ const BLOCK_TYPES: { type: BlockType; label: string; icon: string; description: 
   { type: 'ai_summary', label: 'AI 요약', icon: '🤖', description: 'Claude AI가 탭 내용을 요약' },
 ]
 
-const BLOCK_TYPES_PER_PAGE = 7
+const BLOCK_TYPES_PER_PAGE = 6
 
 const BLOCK_PREVIEW_SAMPLES: Record<BlockType, Record<string, unknown>> = {
   text: { markdown: '## 마크다운 텍스트\n\n**굵게**, *기울임*, `인라인 코드`\n\n- 항목 1\n- 항목 2\n\n> 인용문 예시' },
@@ -140,8 +139,7 @@ export default function NoteDetailPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [showSaveReason, setShowSaveReason] = useState(false)
-  const [showSlash, setShowSlash] = useState(false)
-  const [slashQuery, setSlashQuery] = useState('')
+  const [blockTypeSearch, setBlockTypeSearch] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [showBookmarks, setShowBookmarks] = useState(false)
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
@@ -520,6 +518,12 @@ export default function NoteDetailPage() {
     pendingChanges.current = {}
     pendingTitles.current = {}
     setIsEditMode(true)
+  }
+
+  const handleCancel = () => {
+    pendingChanges.current = {}
+    pendingTitles.current = {}
+    setIsEditMode(false)
   }
 
   const blockTypeInfo = (type: BlockType) => BLOCK_TYPES.find((bt) => bt.type === type)
@@ -1131,28 +1135,37 @@ export default function NoteDetailPage() {
             )}
 
             {isEditMode ? (
-              <button
-                onClick={() => setShowSaveReason(true)}
-                disabled={saving}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-sky-500 text-white hover:bg-sky-400 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {saving ? (
-                  <>
-                    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    저장 중...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    완료
-                  </>
-                )}
-              </button>
+              <>
+                <button
+                  onClick={handleCancel}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-sky-600 hover:text-sky-800 bg-white/50 hover:bg-white/70 border border-sky-200/60 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => setShowSaveReason(true)}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-sky-500 text-white hover:bg-sky-400 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {saving ? (
+                    <>
+                      <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      저장 중...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      완료
+                    </>
+                  )}
+                </button>
+              </>
             ) : (
               <button
                 onClick={handleStartEdit}
@@ -1269,14 +1282,7 @@ export default function NoteDetailPage() {
                 {isEditMode && (
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => { setSlashQuery(''); setShowSlash(true) }}
-                      title="/ 슬래시 커맨드로 블록 추가"
-                      className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-mono font-semibold bg-white/70 hover:bg-white/90 border border-sky-300/60 text-sky-700 hover:text-sky-900 transition-all shadow-sm"
-                    >
-                      /
-                    </button>
-                    <button
-                      onClick={() => { setBlockTypePage(0); setShowBlockTypeModal(true) }}
+                      onClick={() => { setBlockTypePage(0); setBlockTypeSearch(''); setShowBlockTypeModal(true) }}
                       className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all shadow-lg"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1406,7 +1412,7 @@ export default function NoteDetailPage() {
                   {isEditMode && (
                     <div className="pt-2">
                       <button
-                        onClick={() => { setBlockTypePage(0); setShowBlockTypeModal(true) }}
+                        onClick={() => { setBlockTypePage(0); setBlockTypeSearch(''); setShowBlockTypeModal(true) }}
                         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-sky-400/70 text-sky-700 font-semibold hover:border-sky-500 hover:bg-white/40 hover:text-sky-900 transition-all text-sm"
                         style={{ background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)' }}
                       >
@@ -1427,14 +1433,18 @@ export default function NoteDetailPage() {
 
       {/* Block Type Modal */}
       {showBlockTypeModal && (() => {
+        const query = blockTypeSearch.trim().toLowerCase()
+        const filtered = query
+          ? BLOCK_TYPES.filter(bt => bt.label.toLowerCase().includes(query) || bt.description.toLowerCase().includes(query))
+          : null
         const totalPages = Math.ceil(BLOCK_TYPES.length / BLOCK_TYPES_PER_PAGE)
-        const pageItems = BLOCK_TYPES.slice(blockTypePage * BLOCK_TYPES_PER_PAGE, (blockTypePage + 1) * BLOCK_TYPES_PER_PAGE)
+        const pageItems = filtered ?? BLOCK_TYPES.slice(blockTypePage * BLOCK_TYPES_PER_PAGE, (blockTypePage + 1) * BLOCK_TYPES_PER_PAGE)
         const previewType = hoveredBlockType
         const previewSample = previewType ? BLOCK_PREVIEW_SAMPLES[previewType] : null
         return (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center modal-overlay bg-black/40 p-4"
-            onClick={() => setShowBlockTypeModal(false)}
+            onClick={() => { setShowBlockTypeModal(false); setBlockTypeSearch('') }}
           >
             <div
               className="rounded-2xl w-full shadow-2xl animate-slide-up flex overflow-hidden"
@@ -1449,17 +1459,10 @@ export default function NoteDetailPage() {
             >
               {/* Left: block type list */}
               <div className="w-[440px] flex-shrink-0 p-6 flex flex-col">
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sky-950 font-semibold text-lg">블록 유형 선택</h3>
-                    {totalPages > 1 && (
-                      <span className="text-xs text-sky-400 bg-sky-100 px-2 py-0.5 rounded-full">
-                        {blockTypePage + 1} / {totalPages}
-                      </span>
-                    )}
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sky-950 font-semibold text-lg">블록 유형 선택</h3>
                   <button
-                    onClick={() => setShowBlockTypeModal(false)}
+                    onClick={() => { setShowBlockTypeModal(false); setBlockTypeSearch('') }}
                     className="text-sky-400 hover:text-sky-700 transition-colors p-1"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1467,7 +1470,30 @@ export default function NoteDetailPage() {
                     </svg>
                   </button>
                 </div>
-                <div className="flex-1 grid grid-cols-1 gap-1.5">
+                <div className="relative mb-3">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={blockTypeSearch}
+                    onChange={e => setBlockTypeSearch(e.target.value)}
+                    placeholder="블록 검색..."
+                    className="w-full pl-9 pr-4 py-2 rounded-xl border border-sky-200 bg-sky-50/60 text-sky-900 placeholder-sky-400 outline-none focus:border-sky-400 text-sm transition-colors"
+                  />
+                  {blockTypeSearch && (
+                    <button onClick={() => setBlockTypeSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-400 hover:text-sky-600">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                <div className="flex-1 grid grid-cols-1 gap-1.5 overflow-y-auto" style={{ maxHeight: '480px' }}>
+                  {pageItems.length === 0 && (
+                    <p className="text-center text-sky-400 text-sm py-8">검색 결과가 없습니다.</p>
+                  )}
                   {pageItems.map((bt) => (
                     <button
                       key={bt.type}
@@ -1493,7 +1519,7 @@ export default function NoteDetailPage() {
                     </button>
                   ))}
                 </div>
-                {totalPages > 1 && (
+                {!filtered && totalPages > 1 && (
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-sky-300/50">
                     <button
                       onClick={() => setBlockTypePage((p) => Math.max(0, p - 1))}
@@ -1635,7 +1661,8 @@ export default function NoteDetailPage() {
         <SaveReasonModal
           onConfirm={async (msg) => {
             setShowSaveReason(false)
-            if (msg.trim()) await saveHistoryEntry(noteId, msg)
+            const histErr = await saveHistoryEntry(noteId, msg)
+            if (histErr) showToast('변경이력 저장 실패: ' + histErr, 'error')
             handleComplete()
           }}
           onCancel={() => setShowSaveReason(false)}
@@ -1849,28 +1876,6 @@ export default function NoteDetailPage() {
         </div>
       )}
 
-      {/* 슬래시 커맨드 */}
-      {showSlash && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => { setShowSlash(false); setSlashQuery('') }}>
-          <div onClick={e => e.stopPropagation()} className="w-80">
-            <div className="mb-2 px-3">
-              <input
-                autoFocus
-                type="text"
-                value={slashQuery}
-                onChange={e => setSlashQuery(e.target.value)}
-                placeholder="블록 유형 검색..."
-                className="w-full bg-white/90 border border-sky-300/60 rounded-xl px-4 py-2.5 text-sky-900 placeholder-sky-400 outline-none focus:border-sky-500 text-sm shadow-lg"
-              />
-            </div>
-            <SlashCommand
-              query={slashQuery}
-              onSelect={(type) => { setShowSlash(false); setSlashQuery(''); addBlock(type) }}
-              onClose={() => { setShowSlash(false); setSlashQuery('') }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   )
 }
