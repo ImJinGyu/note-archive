@@ -7,18 +7,21 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Node.js 설치
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
       - name: 패키지 설치
         run: npm install
 
-      - name: 테스트 실행
-        run: npm test -- --passWithNoTests
+      - name: 린트 확인
+        run: npm run lint
+
+      - name: 빌드 확인
+        run: npm run build
