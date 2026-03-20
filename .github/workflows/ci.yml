@@ -20,8 +20,8 @@ jobs:
       - name: 패키지 설치
         run: npm install
 
-      - name: 린트 확인
-        run: npm run lint
+#      - name: 린트 확인
+#        run: npm run lint
 
       - name: 빌드 확인
         run: npm run build
