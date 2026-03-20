@@ -22,7 +22,7 @@ interface AccountModalProps {
   onSignOut: () => void
 }
 
-export default function AccountModal({ isOpen, user, onClose, onSignOut }: AccountModalProps) {
+export default function AccountModal({ isOpen, user, onClose, onSignOut }: AccountModalProps {
   const { showToast } = useToast()
   const [tab, setTab] = useState<Tab>('account')
 
